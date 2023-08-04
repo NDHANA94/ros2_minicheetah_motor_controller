@@ -1,0 +1,20 @@
+/minicheetah_motor_node:
+  ros__parameters:
+    subscriber_name: "motor_cmds" 
+    com_interface: "serial" # "serial" or "can"
+
+    serial_port: "/dev/ttyUSB0"       # [str]
+    serial_baud: 115200               # [int]
+    serial_timeout: 20                # [int]
+
+    read_cmd_response_delay: 0.0001 # sec
+    read_set_zero_response_delay: 0.1 # sec
+    state_update_frequency: 1000 # Hz
+
+    num_of_motors: 3
+
+    max_p: 12.5
+    max_v: 65.0
+    max_kp: 500.0
+    max_kd: 5.0
+    max_iff: 20.0
