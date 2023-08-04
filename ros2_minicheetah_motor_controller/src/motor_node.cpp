@@ -88,8 +88,6 @@ private:
     max_kp_ = this->get_parameter("max_kp").as_double();
     max_kd_ = this->get_parameter("max_kd").as_double();
     max_iff_ = this->get_parameter("max_iff").as_double();
-
-
   }
 
   void init_serail(){
@@ -114,7 +112,8 @@ private:
     {
       RCLCPP_INFO_STREAM_ONCE(this->get_logger(), "Initialized Serial port " << serial_port_.c_str());
     }
-    else{
+    else
+    {
       RCLCPP_ERROR_STREAM_THROTTLE(this->get_logger(), *this->get_clock(), 1000, "Unable to initialize serial port " << serial_port_.c_str());
     }
   }
