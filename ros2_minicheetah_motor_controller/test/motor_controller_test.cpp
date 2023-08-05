@@ -1,7 +1,60 @@
-#include "ros2_minicheetah_motor_controller/motor_controller.h"
+#include "motor_controller_test.h"
+
+
+
+// ========================================================================================
+// motor default constructor
+Motor::Motor()
+{
+    id = 0;
+    Error = 0;
+    // rx_packet = new uint8_t [6];
+    // tx_packet = new uint8_t [9];
+    // motor_params = new uint16_t [5];
+    // control_limits = new int8_t [4];
+    // control_params = new uint8_t [5];
+    // states = new float [4];
+}
+
+// motor Parameterized constructor
+Motor::Motor(uint8_t id_, MotorParams motor_params_, MotorControlLimits control_limits_)
+{
+    id = id_;
+    Error = 0;
+    params = motor_params_;
+    control_limits = control_limits_;
+    // rx_packet = new uint8_t [6];
+    // tx_packet = new uint8_t [9];
+    // control_limits = new int8_t [4];
+    // motor_params = new uint16_t [5];
+    // control_params = new uint8_t [5];
+    // states = new float [4];
+}
+
+Motor::~Motor()
+{   
+    printf("closing motor id-%i \n", id);
+    // delete [] rx_packet;
+    // delete [] tx_packet;
+    // delete [] motor_params;
+    // delete [] control_limits;
+    // delete [] control_params;
+    // delete [] states;
+    // rx_packet = nullptr;
+    // tx_packet = nullptr;
+    // motor_params = nullptr;
+    // control_limits = nullptr;
+    // control_params = nullptr; 
+    // states = nullptr;
+}
+
+
+// =======================================================================================
+
+
 
 // Motor Module Parameterized constructor
-MotorController::MotorController(uint8_t com_interface, uint8_t num_of_motors)
+MotorModule::MotorModule(uint8_t com_interface, uint8_t num_of_motors)
 {
   _com_interface = com_interface;
   _num_of_motors = num_of_motors;
@@ -10,7 +63,7 @@ MotorController::MotorController(uint8_t com_interface, uint8_t num_of_motors)
 }
 
 // Motor Module deconstructor
-MotorController::~MotorController()
+MotorModule::~MotorModule()
 {
     // delete allocated memory
     printf("deleting motor alloc\n");
@@ -32,7 +85,7 @@ MotorController::~MotorController()
     }
 }
 
-Motor* MotorController::add_motor(uint8_t id)
+Motor* MotorModule::add_motor(uint8_t id)
 {
     uint8_t m_index = _num_of_available_motors;
     Motor *m = &motor[m_index];
@@ -45,7 +98,7 @@ Motor* MotorController::add_motor(uint8_t id)
     return m;
 }
 
-void MotorController::set_motor_params(Motor* motor_, float max_p, float max_v, float max_kp, float max_kd, float max_iff)
+void MotorModule::set_motor_params(Motor* motor_, float max_p, float max_v, float max_kp, float max_kd, float max_iff)
 {
     motor_->params.max_p = max_p;
     motor_->params.max_v = max_v;
@@ -55,7 +108,7 @@ void MotorController::set_motor_params(Motor* motor_, float max_p, float max_v, 
     motor_->config_status[0] = true;
 }
 
-void MotorController::set_control_limits(Motor* motor_, float min_p, float max_p, float max_v, float max_i)
+void MotorModule::set_control_limits(Motor* motor_, float min_p, float max_p, float max_v, float max_i)
 {
     motor_->control_limits.min_p = min_p;
     motor_->control_limits.max_p = max_p;
@@ -64,7 +117,7 @@ void MotorController::set_control_limits(Motor* motor_, float min_p, float max_p
     motor_->config_status[1] = true;
 }
 
-void MotorController::enable_motor(Motor* motor_)
+void MotorModule::enable_motor(Motor* motor_)
 {
      
     uint8_t tx[9] = {motor_->id, 0xFF, 0xFF, 0XFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFC};
@@ -82,7 +135,7 @@ void MotorController::enable_motor(Motor* motor_)
     motor_->states.is_enabled = true;
 }
 
-void MotorController::enable_all_motors()
+void MotorModule::enable_all_motors()
 {
     for(int i = 0; i<_num_of_available_motors; i++){
         uint8_t tx[9] = {motor[i].id, 0xFF, 0xFF, 0XFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFC};
@@ -101,7 +154,7 @@ void MotorController::enable_all_motors()
     } 
 }
 
-void MotorController::disable_motor(Motor* motor_)
+void MotorModule::disable_motor(Motor* motor_)
 {
     uint8_t tx[9] = {motor_->id, 0xFF, 0xFF, 0XFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFD};
 
@@ -117,7 +170,7 @@ void MotorController::disable_motor(Motor* motor_)
     motor_->states.is_enabled = false;
 }
 
-void MotorController::disable_all_motors()
+void MotorModule::disable_all_motors()
 {
     for(int i = 0; i<_num_of_available_motors; i++){
         uint8_t tx[9] = {motor[i].id, 0xFF, 0xFF, 0XFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFD};
@@ -135,7 +188,7 @@ void MotorController::disable_all_motors()
     } 
 }
 
-void MotorController::set_motor_zero(Motor* motor_)
+void MotorModule::set_motor_zero(Motor* motor_)
 {
     uint8_t tx[9] = {motor_->id, 0xFF, 0xFF, 0XFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFE};
 
@@ -150,7 +203,7 @@ void MotorController::set_motor_zero(Motor* motor_)
 }
 
 
-MotorStates MotorController::get_motor_states(Motor* motor_)
+MotorStates MotorModule::get_motor_states(Motor* motor_)
 {
     if (motor_->config_status[0]){
         // send previous cmd to the motor and read the feedback
@@ -164,9 +217,9 @@ MotorStates MotorController::get_motor_states(Motor* motor_)
 
     }
     else{
-        printf("Error: motor %i paramters are not set.\n", motor_->id);
+        // printf("Error: motor %i paramters are not set.\n", motor_->id);
         printf("Please set parameters of motor id-%i.\n", motor_->id);
-        
+        throw "Motor Parameters are NOT set";
         // abort();
     }
 
@@ -174,7 +227,7 @@ MotorStates MotorController::get_motor_states(Motor* motor_)
 }
 
 
-void MotorController::set_motor_position(Motor* motor_, ControlCmds cmd)
+void MotorModule::set_motor_position(Motor* motor_, ControlCmds cmd)
 {
     // set motor commands
     motor_->control_cmd.p_des = cmd.p_des;
@@ -196,7 +249,7 @@ void MotorController::set_motor_position(Motor* motor_, ControlCmds cmd)
 }
 
 // pack tx_packet
-void MotorController::pack_tx_packet(Motor * m)
+void MotorModule::pack_tx_packet(Motor * m)
 {
     // limit data to be within bounds
     float p_des = fminf(fmaxf(-m->params.max_p, m->control_cmd.p_des), m->params.max_p);
@@ -223,7 +276,7 @@ void MotorController::pack_tx_packet(Motor * m)
 }
 
 // unpack rx_data from the motor
-void MotorController::unpack_rx_packet(uint8_t rx_data[6])
+void MotorModule::unpack_rx_packet(uint8_t rx_data[6])
 {
 
     // TODO: here unpack rx_packet into feedback
@@ -232,21 +285,21 @@ void MotorController::unpack_rx_packet(uint8_t rx_data[6])
 }
 
 
-float MotorController::fmaxf(float x, float y){
+float MotorModule::fmaxf(float x, float y){
     return (((x)>(y)) ? (x) : (y));
 }
 
-float MotorController::fminf(float x, float y){
+float MotorModule::fminf(float x, float y){
     return (((x) < (y)) ? (x) : (y));
 }
 
-int MotorController::float2uint(float x, float x_min, float x_max, int bits){
+int MotorModule::float2uint(float x, float x_min, float x_max, int bits){
     float span = x_max = x_min;
     float offset = x_min;
     return (int) ((x-offset) * ((float)((1<<bits)-1))/span);
 }
 
-float MotorController::uint2float(int x, float x_min, float x_max, int bits){
+float MotorModule::uint2float(int x, float x_min, float x_max, int bits){
     float span = x_max - x_min;
     float offset = x_min;
     return ((float)x)*span/((float)((1<<bits)-1)) + offset;
