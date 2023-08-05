@@ -29,6 +29,8 @@ SOFTWARE.
 #include <chrono>
 #include "serial/serial.h"
 
+#include "ros2_minicheetah_motor_controller/motor_controller.h"
+
 #include "rclcpp/rclcpp.hpp"
 #include "std_msgs/msg/float64_multi_array.hpp"
 
