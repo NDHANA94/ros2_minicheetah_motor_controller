@@ -50,8 +50,8 @@ int main(int argc, char **argv)
     m_drv.set_motor_params(m1, 12.5, 65.0, 500.0, 5.0, 20);
     m_drv.set_control_limits(m1, -1.0, 1.0, 1.5, 15);
 
-    m_drv.set_motor_params(m2, 10.5, 55.0, 300.0, 10.0, 30);
-    m_drv.set_control_limits(m2, -1.5, 1.5, 1.0, 10);
+    // m_drv.set_motor_params(m2, 10.5, 55.0, 300.0, 10.0, 30);
+    // m_drv.set_control_limits(m2, -1.5, 1.5, 1.0, 10);
 
     m_drv.enable_motor(m1);
     // m_drv.disable_motor(m1);
@@ -67,13 +67,13 @@ int main(int argc, char **argv)
     print_states(m2);
 
 
-    try{
+    /* try{
         MotorStates state_ = m_drv.get_motor_states(m1);
         printf("%i\n", state_.is_enabled);
 
     } catch (const char* msg){
         cout << msg << endl;
-    }
+    } */
     
     // m_drv.add_motor(1);
 
