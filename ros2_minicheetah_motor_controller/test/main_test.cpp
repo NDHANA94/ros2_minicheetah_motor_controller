@@ -6,6 +6,8 @@
 #include <assert.h>
 
 #include "motor_controller_test.h"
+// #include "rclcpp/rclcpp.hpp"
+
 
 using namespace std;
 
@@ -32,12 +34,18 @@ void print_control_limits(Motor* m){
 
 void print_states(Motor* m){
     printf("---------------------\n");
-    printf("motor %i params: \n", m->id);
+    printf("motor %i states: \n", m->id);
     printf("\t is_enabled: %i\n", m->states.is_enabled);
     printf("\t position: %f\n", m->states.position);
     printf("\t velocity: %f\n", m->states.velocity);
     printf("\t current: %f\n", m->states.curent);
     printf("---------------------\n");
+}
+
+void print_rx_data(Motor* m)
+{
+    printf("motor %i rx_packet: | %i | %i | %i | %i | %i |\n", m->id, m->rx_packet[0], m->rx_packet[1],\
+     m->rx_packet[2], m->rx_packet[3], m->rx_packet[4]);
 }
 
 int main(int argc, char **argv)
@@ -57,15 +65,22 @@ int main(int argc, char **argv)
     // m_drv.disable_motor(m1);
     m_drv.set_motor_zero(m1);
 
+    m1->rx_packet[0] = 127;
+    m1->rx_packet[1] = 255;
+    m1->rx_packet[2] = 127;
+    m1->rx_packet[3] = 0;
+    m1->rx_packet[4] = 0;
+
+    MotorStates state_ = m_drv.get_motor_states(m1);
     
     print_motor_params(m1);
     print_control_limits(m1);
+    print_rx_data(m1);
     print_states(m1);
 
-    print_motor_params(m2);
-    print_control_limits(m2);
-    print_states(m2);
-
+    // print_motor_params(m2);
+    // print_control_limits(m2);
+    // print_states(m2);
 
     /* try{
         MotorStates state_ = m_drv.get_motor_states(m1);
@@ -76,6 +91,7 @@ int main(int argc, char **argv)
     } */
     
     // m_drv.add_motor(1);
+
 
     return 0;
 }

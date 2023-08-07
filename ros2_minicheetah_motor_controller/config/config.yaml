@@ -7,6 +7,11 @@
     serial_baud: 115200               # [int]
     serial_timeout: 20                # [int]
 
+    can_port: "/dev/ttyUSB0"
+    can_interface: "vcan0"
+    can_baud: 1000000
+
+
     read_cmd_response_delay: 0.0001 # sec
     read_set_zero_response_delay: 0.1 # sec
     state_update_frequency: 1000 # Hz

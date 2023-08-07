@@ -208,19 +208,17 @@ MotorStates MotorModule::get_motor_states(Motor* motor_)
     if (motor_->config_status[0]){
         // send previous cmd to the motor and read the feedback
     
-        /* TODO: 1. read 6 bytes of serial or can and save the into rx_packet only if rx_packet was sent by motor id: _id */
-
-        uint8_t rx_data[] = {motor_->id,2,3,4,5,6}; // TODO: remove this temp line
+        /* TODO: 1. read 6 bytes of serial or can and save last 5 data into rx_packet only if rx_packet was sent by motor related motor id */
 
         // unpack rx_packet
-        unpack_rx_packet(rx_data);
+        unpack_rx_packet(motor_);
 
     }
     else{
-        // printf("Error: motor %i paramters are not set.\n", motor_->id);
+        printf("Error: motor %i paramters are not set.\n", motor_->id);
         printf("Please set parameters of motor id-%i.\n", motor_->id);
-        throw "Motor Parameters are NOT set";
-        // abort();
+        // throw "Motor Parameters are NOT set";
+        abort();
     }
 
     return motor_->states;
@@ -248,7 +246,29 @@ void MotorModule::set_motor_position(Motor* motor_, ControlCmds cmd)
     }
 }
 
-// pack tx_packet
+Motor* MotorModule::get_motors()
+{
+    return motor;
+}
+
+/* ~ Tx Packet Data Structure ~
+8 bit motor_id
+16 bit position command, between -4*pi and 4*pi
+12 bit velocity command, between -30 and + 30 rad/s
+12 bit kp, between 0 and 500 N-m/rad
+12 bit kd, between 0 and 100 N-m*s/rad
+12 bit feed forward torque, between -18 and 18 N-m
+CAN Packet is 8 8-bit words
+Formatted as follows.  For each quantity, bit 0 is LSB
+0: [motor_id[7-0]]
+1: [position[15-8]]
+2: [position[7-0]]
+3: [velocity[11-4]]
+4: [velocity[3-0], kp[11-8]]
+5: [kp[7-0]]
+6: [kd[11-4]]
+7: [kd[3-0], torque[11-8]]
+8: [torque[7-0]] */
 void MotorModule::pack_tx_packet(Motor * m)
 {
     // limit data to be within bounds
@@ -275,13 +295,28 @@ void MotorModule::pack_tx_packet(Motor * m)
     m->tx_packet[8] = iff_int&0xFF;
 }
 
-// unpack rx_data from the motor
-void MotorModule::unpack_rx_packet(uint8_t rx_data[6])
+/* ~ Rx Packet Data Structure ~
+ 16 bit position, between -4*pi and 4*pi
+ 12 bit velocity, between -30 and + 30 rad/s
+ 12 bit current, between -40 and 40;
+ CAN Packet is 5 8-bit words
+ Formatted as follows.  For each quantity, bit 0 is LSB
+ 0: [position[15-8]]
+ 1: [position[7-0]]
+ 2: [velocity[11-4]]
+ 3: [velocity[3-0], current[11-8]]
+ 4: [current[7-0]] */
+void MotorModule::unpack_rx_packet(Motor* motor_)
 {
+    // unpack ints from rx_packet
+    int p_int = (motor_->rx_packet[0]<<8) | motor_->rx_packet[1];
+    int v_int = (motor_->rx_packet[2]<<4) | (motor_->rx_packet[3]>>4);
+    int i_int = ((motor_->rx_packet[3]&0xF)<<8) | motor_->rx_packet[4]; 
 
-    // TODO: here unpack rx_packet into feedback
-
-    
+    // convert unsigned ints to float
+    motor_->states.position = uint2float(p_int, -motor_->params.max_p, motor_->params.max_p, 16);
+    motor_->states.velocity = uint2float(v_int, -motor_->params.max_v, motor_->params.max_p, 12);
+    motor_->states.curent   = uint2float(i_int, -motor_->params.max_iff, motor_->params.max_iff, 12);
 }
 
 
@@ -304,3 +339,14 @@ float MotorModule::uint2float(int x, float x_min, float x_max, int bits){
     float offset = x_min;
     return ((float)x)*span/((float)((1<<bits)-1)) + offset;
 }
+
+// bool init_serial(char* port, int baudrate, float timeout)
+// {
+    
+// } 
+
+// bool serial_write(uint8_t* msg, uint8_t size)
+// {
+
+//     return 0;
+// }

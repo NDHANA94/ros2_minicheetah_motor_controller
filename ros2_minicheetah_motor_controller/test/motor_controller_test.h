@@ -3,6 +3,10 @@
 
 #include <cstdio>
 #include <iostream>
+#include <string>
+#include <stdio.h>
+
+// #include "serial/serial.h"
 
 
 struct {
@@ -38,7 +42,7 @@ struct {
 struct Motor
 {
     uint8_t id;
-    uint8_t rx_packet[6]; // [ id , p_H[8] , p_L[8] , v_H[8[] , v_L[4]+i_H[4] , i_L[8] ]
+    uint8_t rx_packet[5]; // [p_H[8] , p_L[8] , v_H[8[] , v_L[4]+i_H[4] , i_L[8] ]
     uint8_t tx_packet[9]; // [ id, p_H[8], p_L[8], v_H[8], v_L[4]+kp_H[4], kp_L[8], kd_H[8], kd_L[4]+iff_H[4], iff_L[8] ]
     uint8_t Error;
     bool config_status[2]; // config_status[0] == true; -> if motor_params were added
@@ -80,6 +84,8 @@ public:
 
     void set_motor_position(Motor* motor_, ControlCmds cmd); // set position of one motor
 
+    Motor* get_motors();
+
     // void set_motor_positions(tx_packet* tx_data)
     // uint8_t get_num_of_motors();
     // bool is_motor_enable();
@@ -100,10 +106,12 @@ private:
 
     // create an array of motor obejetcs
     Motor* motor;
+
+    // serial::Serial serial_;
     
 
     // private methods
-    void unpack_rx_packet(uint8_t rx_data[6]); // return [p, v, iff]
+    void unpack_rx_packet(Motor* motor_); // return [p, v, iff]
     void pack_tx_packet(Motor *motor_); 
     // uint8_t* read_serial(uint8_t bytes);
     // bool write_serial();

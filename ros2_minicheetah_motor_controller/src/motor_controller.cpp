@@ -37,7 +37,7 @@ MotorController::MotorController(uint8_t com_interface, uint8_t num_of_motors)
 MotorController::~MotorController()
 {
     // delete allocated memory
-    printf("deleting motor alloc\n");
+    printf("[MotorController] deleting motor alloc\n");
     delete [] motor;
     motor = nullptr;
 
@@ -96,7 +96,7 @@ void MotorController::enable_motor(Motor* motor_)
     /* TODO: send this cmd over selected com_interface here: */
 
     // debug print
-    printf("motor id-%i enable cmd: ", motor_->id);
+    printf("[MotorController] motor id-%i enable cmd: ", motor_->id);
     for (int i=0; i<sizeof(tx); i++){
         printf("| %i |", tx[i]);
     }
@@ -114,7 +114,7 @@ void MotorController::enable_all_motors()
         /* TODO: send cmd over selected com_interface here: */
 
         // debug print
-        printf("motor id-%i enable cmd: ", motor[i].id);
+        printf("[MotorController] motor id-%i enable cmd: ", motor[i].id);
         for (int i=0; i<sizeof(tx); i++){
             printf("| %i |", tx[i]);
         }
@@ -132,7 +132,7 @@ void MotorController::disable_motor(Motor* motor_)
     /* TODO: send this cmd over selected com_interface here: */
 
     // debug print
-    printf("motor id-%i disable cmd: ", motor_->id);
+    printf("[MotorController] motor id-%i disable cmd: ", motor_->id);
     for (int i=0; i<sizeof(tx); i++){
         printf("| %i |", tx[i]);
     }
@@ -149,7 +149,7 @@ void MotorController::disable_all_motors()
         /* TODO: send cmd over selected com_interface here: */
 
         // debug print
-        printf("motor id-%i disable cmd: ", motor[i].id);
+        printf("[MotorController] motor id-%i disable cmd: ", motor[i].id);
         for (int i=0; i<sizeof(tx); i++){
             printf("| %i |", tx[i]);
         }
@@ -166,7 +166,7 @@ void MotorController::set_motor_zero(Motor* motor_)
     /* TODO: send this cmd over selected com_interface here: */
 
     // debug print
-    printf("motor id-%i set_zero cmd: ", motor_->id);
+    printf("[MotorController] motor id-%i set_zero cmd: ", motor_->id);
     for (int i=0; i<sizeof(tx); i++){
         printf("| %i |", tx[i]);
     }
@@ -184,12 +184,12 @@ MotorStates MotorController::get_motor_states(Motor* motor_)
         uint8_t rx_data[] = {motor_->id,2,3,4,5,6}; // TODO: remove this temp line
 
         // unpack rx_packet
-        unpack_rx_packet(rx_data);
+        unpack_rx_packet(motor_);
 
     }
     else{
-        printf("Error: motor %i paramters are not set.\n", motor_->id);
-        printf("Please set parameters of motor id-%i.\n", motor_->id);
+        printf("[MotorController] Error: motor %i paramters are not set.\n", motor_->id);
+        printf("[MotorController] Please set parameters of motor id-%i.\n", motor_->id);
         
         // abort();
     }
@@ -213,13 +213,31 @@ void MotorController::set_motor_position(Motor* motor_, ControlCmds cmd)
     //
 
     // debug print
-    printf("[setting motor position] cmd: ");
+    printf("[MotorController] [setting motor position] cmd: ");
     for(int i=0; i<sizeof(motor_->tx_packet); i++){
         printf(" %i ", motor_->tx_packet[i]);
     }
 }
 
-// pack tx_packet
+/* ~ Tx Packet Data Structure ~
+* 8 bit motor_id
+* 16 bit position command, between -4*pi and 4*pi
+* 12 bit velocity command, between -30 and + 30 rad/s
+* 12 bit kp, between 0 and 500 N-m/rad
+* 12 bit kd, between 0 and 100 N-m*s/rad
+* 12 bit feed forward torque, between -18 and 18 N-m
+* CAN Packet is 8 8-bit words
+* Formatted as follows.  For each quantity, bit 0 is LSB
+* 0: [motor_id[7-0]]
+* 1: [position[15-8]]
+* 2: [position[7-0]]
+* 3: [velocity[11-4]]
+* 4: [velocity[3-0], kp[11-8]]
+* 5: [kp[7-0]]
+* 6: [kd[11-4]]
+* 7: [kd[3-0], torque[11-8]]
+* 8: [torque[7-0]] 
+*/
 void MotorController::pack_tx_packet(Motor * m)
 {
     // limit data to be within bounds
@@ -246,15 +264,30 @@ void MotorController::pack_tx_packet(Motor * m)
     m->tx_packet[8] = iff_int&0xFF;
 }
 
-// unpack rx_data from the motor
-void MotorController::unpack_rx_packet(uint8_t rx_data[6])
+/* ~ Rx Packet Data Structure ~
+ * 16 bit position, between -4*pi and 4*pi
+ * 12 bit velocity, between -30 and + 30 rad/s
+ * 12 bit current, between -40 and 40;
+ * CAN Packet is 5 8-bit words
+ * Formatted as follows.  For each quantity, bit 0 is LSB
+ * 0: [position[15-8]]
+ * 1: [position[7-0]]
+ * 2: [velocity[11-4]]
+ * 3: [velocity[3-0], current[11-8]]
+ * 4: [current[7-0]] 
+*/
+void MotorController::unpack_rx_packet(Motor* motor_)
 {
+    // unpack ints from rx_packet
+    int p_int = (motor_->rx_packet[0]<<8) | motor_->rx_packet[1];
+    int v_int = (motor_->rx_packet[2]<<4) | (motor_->rx_packet[3]>>4);
+    int i_int = ((motor_->rx_packet[3]&0xF)<<8) | motor_->rx_packet[4]; 
 
-    // TODO: here unpack rx_packet into feedback
-
-    
+    // convert unsigned ints to float
+    motor_->states.position = uint2float(p_int, -motor_->params.max_p, motor_->params.max_p, 16);
+    motor_->states.velocity = uint2float(v_int, -motor_->params.max_v, motor_->params.max_p, 12);
+    motor_->states.curent   = uint2float(i_int, -motor_->params.max_iff, motor_->params.max_iff, 12);
 }
-
 
 float MotorController::fmaxf(float x, float y){
     return (((x)>(y)) ? (x) : (y));
@@ -274,4 +307,53 @@ float MotorController::uint2float(int x, float x_min, float x_max, int bits){
     float span = x_max - x_min;
     float offset = x_min;
     return ((float)x)*span/((float)((1<<bits)-1)) + offset;
+}
+
+void MotorController::send_motor_cmd(uint8_t tx[9])
+{
+    if(_com_interface==0){
+        
+    }
+    else{
+        
+    }
+}
+
+
+void MotorController::init_serial(std::string port, uint32_t baudrate, uint8_t timeout)
+{
+    printf("[MotorController] Initializing CAN port");
+    try
+    {
+        {
+            serial_.setPort(serial_port_.c_str());
+            serial_.setBaudrate(serial_baud_);
+            serial_.setFlowcontrol(serial::flowcontrol_none);
+            serial_.setParity(serial::parity_none);
+            serial_.setStopbits(serial::stopbits_one);
+            serial_.setBytesize(serial::eightbits);
+            serial::Timeout time_out = serial::Timeout::simpleTimeout(serial_timeout_);
+            serial_.setTimeout(time_out);
+            serial_.open();
+        }
+    }
+    catch(serial::IOException& e)
+    {
+
+        printf("Unable to open Serial port: %c\n", serial_port_.c_str());
+        exit(0);
+    }
+    if(serial_.isOpen())
+    {
+        printf("Initialized Serial port: %c\n", serial_port_.c_str());
+    }
+    else{
+        printf("Unable to initialized serial port: %c\n", serial_port_.c_str());
+        exit(0);
+    }
+}
+
+void MotorController::init_can(std::string port, uint32_t bitrate, uint8_t timeout)
+{
+    printf("[MotorController] Initializing CAN port");
 }

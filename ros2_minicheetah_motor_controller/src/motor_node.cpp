@@ -131,12 +131,16 @@ private:
     
   }
 
+ 
 
   std::string subscriber_name_ = "motor_cmds", com_interface_, serial_port_;
   double read_cmd_response_delay_, read_set_zero_response_delay_, max_p_, max_v_, max_kp_, max_kd_, max_iff_;
   int motor_state_update_freq_, num_of_motors_ , serial_baud_, serial_timeout_;
   
   serial::Serial serial_;
+
+  
+  
 
   rclcpp::Subscription<std_msgs::msg::Float64MultiArray>::SharedPtr subscription_;
 };

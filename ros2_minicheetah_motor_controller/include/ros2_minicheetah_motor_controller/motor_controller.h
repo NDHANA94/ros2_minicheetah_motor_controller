@@ -29,20 +29,33 @@ SOFTWARE.
 #include <iostream>
 #include "motor.h"
 
+#include <linux/can.h>
+#include <linux/can/raw.h>
+#include <net/if.h>
+#include <sys/ioctl.h>
+#include <sys/socket.h>
+
+#include "serial/serial.h"
+#include "rclcpp/rclcpp.hpp"
+
 #pragma once
 class MotorController
 {
 private:
+    Motor* motor;
+    serial::Serial serial_;
+    
+
+    int s = socket(PF_CAN, SOCK_RAW, CAN_RAW);
+
+
     uint8_t _id, _num_of_motors, _num_of_available_motors;
     uint8_t _com_interface; // 0-Serial, 1-CAN
     uint8_t* tx_packet; // [id, p_des_H[8], p_des_L[8], v_des_H[8], v_des_L[4]+kp_H[4], kp_L[8], kd_H[8], kd_L[4]+iff_H[4], iff_L[8]]
     uint8_t* rx_packet; // [id, p_H[8], p_L[8], v_H[8], v_L[4]+i_H[4], i_L[8]]
 
-    // ptr for motor obejetcs
-    Motor* motor;
-    
     // private method
-    void unpack_rx_packet(uint8_t rx_data[6]); // return [p, v, iff]
+    void unpack_rx_packet(Motor *motor_); // return [p, v, iff]
     void pack_tx_packet(Motor *motor_); 
     // uint8_t* read_serial(uint8_t bytes);
     // bool write_serial();
@@ -51,6 +64,10 @@ private:
     float fminf(float x, float y);
     int float2uint(float x, float x_min, float x_max, int bits);
     float uint2float(int x, float x_min, float x_max, int bits);
+
+    void init_serial(std::string port, uint32_t baudrate, uint8_t timeout);
+    void init_can(std::string port, uint32_t bitrate, uint8_t timeout);
+    void send_motor_cmd(uint8_t tx[9]);
 
 
 public:
