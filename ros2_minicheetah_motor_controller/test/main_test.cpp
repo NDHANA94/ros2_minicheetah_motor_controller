@@ -78,19 +78,7 @@ int main(int argc, char **argv)
     print_rx_data(m1);
     print_states(m1);
 
-    // print_motor_params(m2);
-    // print_control_limits(m2);
-    // print_states(m2);
-
-    /* try{
-        MotorStates state_ = m_drv.get_motor_states(m1);
-        printf("%i\n", state_.is_enabled);
-
-    } catch (const char* msg){
-        cout << msg << endl;
-    } */
     
-    // m_drv.add_motor(1);
 
 
     return 0;

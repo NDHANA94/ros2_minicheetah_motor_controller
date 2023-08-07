@@ -30,24 +30,21 @@ private:
 
   void set_termios();
 
-
 public:
   Serial();
-
   Serial(const char* port_, uint8_t timeout_);
- 
   ~Serial();
 
   void set_baudrate(unsigned int baudrate);
   int isOpen();
-  void write_(std::string msg);
-  void write_(unsigned int msg[]);
+  void write_string(std::string* msg);
+  void write_bytearray(uint8_t* msg, uint8_t size);
 
   void read_();
-
   void close_();
 
   int serial;
+  bool debug=true;
 };
 
 

@@ -1,30 +1,39 @@
 
-#include "serial_test.h"
+#include "ros2_minicheetah_motor_controller/motor_serial_com.h"
 
-
-
-Serial::Serial(){}
-
-Serial::Serial(const char* port_, uint8_t timeout_)
+MotorSerialCom::MotorSerialCom()
 {
-  serial = open(port_, O_RDWR);
-  if (serial < 0){
-    printf("Error while opening device: %s\n", port_);
-    exit(0);
-  }
-  timeout = timeout_;
-  is_initialized = true;
-  set_termios();
+    serial = open(DEFAULT_PORT, O_RDWR);
+    if (serial < 0)
+    {
+        printf("[MotorSerial][Error] Error while opening device: %s\n", DEFAULT_PORT);
+        exit(0);
+    }
+    is_serial_initialized = true;
+    set_termios();
+    printf("[MotorSerial][Info] Serial port %s is initialized. \n", DEFAULT_PORT);
 }
 
-Serial::~Serial(){}
+MotorSerialCom::MotorSerialCom(const char* port, uint8_t timeout)
+{
+    serial = open(port, O_RDWR);
+    if(serial<0)
+    {
+        printf("[MotorSerial][Error] Error while opening device: %s\n", port);
+        exit(0);
+    }
+    is_serial_initialized = true;
+    set_termios();
+    printf("[MotorSerial][Info] Serial port %s is initialized. \n", port);
+}
 
- 
-void Serial::set_termios()
+MotorSerialCom::~MotorSerialCom(){}
+
+void MotorSerialCom::set_termios()
 {
     // Read in existing settings, and handle any error
     if(tcgetattr(serial, &tty) != 0){
-      printf("Error %i from tcgetattr: %s\n", errno, strerror(errno));
+      printf("[MotorSerialCom][Error] Error %i from tcgetattr: %s\n", errno, strerror(errno));
       exit(0);
     }
     tty.c_cflag &= ~PARENB; // Clear parity bit, disabling parity (most common)
@@ -51,9 +60,9 @@ void Serial::set_termios()
     tty.c_cc[VMIN] = 0;
 }
 
-void Serial::set_baudrate(unsigned int baudrate)
+void MotorSerialCom::set_baudrate(unsigned int baudrate)
 {
-  // Set in/out baud rate
+    // Set in/out baud rate
     unsigned int baud;
     if (baudrate==0){baud=B0;}
     else if (baudrate==50){baud = B50;}
@@ -87,43 +96,60 @@ void Serial::set_baudrate(unsigned int baudrate)
     else if (baudrate==3500000){baud = B3500000;}
     else if (baudrate==4000000){baud = B4000000;}
     else{
-      printf("%i baudrate is not valid\n", baudrate);
+      printf("[MotorSerialCom][Error] %i baudrate is not valid\n", baudrate);
       exit(0);
     }
     cfsetispeed(&tty, baud);
     cfsetospeed(&tty, baud);
     // save termios settings and check for error
     if (tcsetattr(serial, TCSANOW, &tty) != 0) {
-      printf("Error %i from tcsetattr: %s\n", errno, strerror(errno));
+      printf("[MotorSerialCom][Error] Error while configuring termios.\n");
+      printf("[MotorSerialCom][Error] Error %i from tcsetattr: %s\n", errno, strerror(errno));
       exit(0);
     }
-    is_open = true;
+    is_serial_open = true;
+    printf("[MotorSerialCom][Info] Successfully configured termios.\n");
 }
 
-int Serial::isOpen()
+bool MotorSerialCom::isOpen()
 {
-  return is_open;
+    return is_serial_open;
 }
 
-// to write a string
-void Serial::write_string(std::string* msg){
-  
-  write(serial, msg->c_str(), msg->size());
-  // TODO: read error
-
-  printf("Serial sent %li bytes of data: ", msg->size());
-  printf("%s\n", msg->c_str());
+// Serial write a string message
+// return: Num of written bytes, or -1 if Error
+long int MotorSerialCom::write_string(std::string* msg)
+{
+    long int sent_bytes = write(serial, msg->c_str(), msg->size());
+    if(sent_bytes<0){
+        printf("[MotorSerialCom][Error] Failed to send serial message: %s\n", msg->c_str());
+    }
+    else if(debug){
+        printf("[MotorSerialCom][Debug] Serial sent %li bytes of message: %s\n", sent_bytes, msg->c_str());
+    }
+    return sent_bytes;
 }
 
-void Serial::write_bytearray(uint8_t* msg, uint8_t size){
-  write(serial, msg, size);
-  // TODO: read error
-
-  printf("Serial sent %i bytes of data: |", size);
-  for (int i=0; i<size; i++){
-    printf(" %i |", *(msg+i));
-  }
-  printf("\n");
+// Serial write an array of uint8_t data
+// return: Num of written bytes, or -1 if Error
+long int MotorSerialCom::write_bytearray(uint8_t* bytearray, uint8_t size)
+{
+    long int sent_bytes = write(serial, bytearray, size);
+    if(sent_bytes<0){
+        printf("[MotorSerialCom][Error] Failed to send serial data: |");
+        for(int i=0; i<size; i++){
+            printf(" %i |", *(bytearray+i));
+        }
+        printf("\n");
+    }
+    else if(debug){
+        printf("[MotorSerialCom][Debug] Serial sent %li bytes of data: |");
+        for(int i=0; i<size; i++){
+            printf(" %i |", *(bytearray+i));
+        }
+        printf("\n");
+    }
+    return sent_bytes;
 }
 
 // Read bytes. The behaviour of read() 
@@ -131,37 +157,11 @@ void Serial::write_bytearray(uint8_t* msg, uint8_t size){
 // - does it block?,
 // - how long does it block for?
 //  depends on the termios configuration settings, specifically VMIN and VTIME
-void Serial::read_()
-{
-  memset(&read_buf, '\0', sizeof(read_buf));
-}
-
-void Serial::close_()
-{
-  close(serial);
-  // TODO: read error
-  is_open = false;
-}
+// void Serial::read_()
+// {
+//   memset(&read_buf, '\0', sizeof(read_buf));
+// }
 
 
-int main(int argc, char** argv)
-{
-  Serial serial{"/dev/ttyUSB0", 1};
-  serial.set_baudrate(115200);
-  printf("is serial open: %i\n", serial.isOpen());
 
-  uint8_t tx[9];
-  tx[0] = 1;
-  for(int i=1; i<8; i++)
-  {
-    tx[i] = 0xFF;
-  }
-  tx[8] = 0xFD;
-  printf("tx size: %li\n", sizeof(tx));
-
-  serial.write_bytearray(tx, sizeof(tx));
-
-  // printf("%i", serial.debug);
-
-  return 0;
-}
+// TODO: continueeeee.....
