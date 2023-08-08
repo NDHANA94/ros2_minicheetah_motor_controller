@@ -1,33 +1,43 @@
 
 #include "ros2_minicheetah_motor_controller/motor_serial_com.h"
-
 MotorSerialCom::MotorSerialCom()
-{
-    serial = open(DEFAULT_PORT, O_RDWR);
+{   
+    serial_port_ = DEFAULT_PORT;
+    baudrate_ = DEFAULT_BAUDRATE;
+    serial = open(serial_port_, O_RDWR);
     if (serial < 0)
     {
-        printf("[MotorSerial][Error] Error while opening device: %s\n", DEFAULT_PORT);
+        printf("[MotorSerialCom][Error] Error while opening device: %s\n", DEFAULT_PORT);
         exit(0);
     }
+
     is_serial_initialized = true;
     set_termios();
-    printf("[MotorSerial][Info] Serial port %s is initialized. \n", DEFAULT_PORT);
+    set_baudrate(DEFAULT_BAUDRATE);
+    printf("[MotorSerialCom][Info] Serial port %s is successfully initialized. \n", DEFAULT_PORT);
 }
 
-MotorSerialCom::MotorSerialCom(const char* port, uint8_t timeout)
+MotorSerialCom::MotorSerialCom(const char* port, unsigned int baudrate, uint8_t timeout)
 {
-    serial = open(port, O_RDWR);
+    serial_port_ = port;
+    baudrate_ = baudrate;
+    serial = open(serial_port_, O_RDWR);
     if(serial<0)
     {
-        printf("[MotorSerial][Error] Error while opening device: %s\n", port);
+        printf("[MotorSerialCom][Error] Error while opening device: %s\n", serial_port_);
         exit(0);
     }
     is_serial_initialized = true;
     set_termios();
-    printf("[MotorSerial][Info] Serial port %s is initialized. \n", port);
+    set_baudrate(baudrate_);
+    printf("[MotorSerialCom][Info] Serial port %s is successfully initialized. \n", serial_port_);
 }
 
-MotorSerialCom::~MotorSerialCom(){}
+MotorSerialCom::~MotorSerialCom()
+{
+  close_();
+}
+
 
 void MotorSerialCom::set_termios()
 {
@@ -63,44 +73,43 @@ void MotorSerialCom::set_termios()
 void MotorSerialCom::set_baudrate(unsigned int baudrate)
 {
     // Set in/out baud rate
-    unsigned int baud;
-    if (baudrate==0){baud=B0;}
-    else if (baudrate==50){baud = B50;}
-    else if (baudrate==75){baud = B75;}
-    else if (baudrate==110){baud = B110;}
-    else if (baudrate==134){baud = B134;}
-    else if (baudrate==150){baud = B150;}
-    else if (baudrate==200){baud = B200;}
-    else if (baudrate==300){baud = B300;}
-    else if (baudrate==600){baud = B600;}
-    else if (baudrate==1200){baud = B1200;}
-    else if (baudrate==1800){baud = B1800;}
-    else if (baudrate==2400){baud = B2400;}
-    else if (baudrate==4800){baud = B4800;}
-    else if (baudrate==9600){baud = B9600;}
-    else if (baudrate==19200){baud = B19200;}
-    else if (baudrate==38400){baud = B38400;}
-    else if (baudrate==57600){baud = B57600;}
-    else if (baudrate==115200){baud = B115200;}
-    else if (baudrate==230400){baud = B230400;}
-    else if (baudrate==460800){baud = B460800;}
-    else if (baudrate==500000){baud = B500000;}
-    else if (baudrate==576000){baud = B576000;}
-    else if (baudrate==921600){baud = B921600;}
-    else if (baudrate==1000000){baud = B1000000;}
-    else if (baudrate==1152000){baud = B1152000;}
-    else if (baudrate==1500000){baud = B1500000;}
-    else if (baudrate==2000000){baud = B2000000;}
-    else if (baudrate==2500000){baud = B2500000;}
-    else if (baudrate==3000000){baud = B3000000;}
-    else if (baudrate==3500000){baud = B3500000;}
-    else if (baudrate==4000000){baud = B4000000;}
+    if (baudrate==0){baudrate_=B0;}
+    else if (baudrate==50){baudrate_ = B50;}
+    else if (baudrate==75){baudrate_ = B75;}
+    else if (baudrate==110){baudrate_ = B110;}
+    else if (baudrate==134){baudrate_ = B134;}
+    else if (baudrate==150){baudrate_ = B150;}
+    else if (baudrate==200){baudrate_ = B200;}
+    else if (baudrate==300){baudrate_ = B300;}
+    else if (baudrate==600){baudrate_ = B600;}
+    else if (baudrate==1200){baudrate_ = B1200;}
+    else if (baudrate==1800){baudrate_ = B1800;}
+    else if (baudrate==2400){baudrate_ = B2400;}
+    else if (baudrate==4800){baudrate_ = B4800;}
+    else if (baudrate==9600){baudrate_ = B9600;}
+    else if (baudrate==19200){baudrate_ = B19200;}
+    else if (baudrate==38400){baudrate_ = B38400;}
+    else if (baudrate==57600){baudrate_ = B57600;}
+    else if (baudrate==115200){baudrate_ = B115200;}
+    else if (baudrate==230400){baudrate_ = B230400;}
+    else if (baudrate==460800){baudrate_ = B460800;}
+    else if (baudrate==500000){baudrate_ = B500000;}
+    else if (baudrate==576000){baudrate_ = B576000;}
+    else if (baudrate==921600){baudrate_ = B921600;}
+    else if (baudrate==1000000){baudrate_ = B1000000;}
+    else if (baudrate==1152000){baudrate_ = B1152000;}
+    else if (baudrate==1500000){baudrate_ = B1500000;}
+    else if (baudrate==2000000){baudrate_ = B2000000;}
+    else if (baudrate==2500000){baudrate_ = B2500000;}
+    else if (baudrate==3000000){baudrate_ = B3000000;}
+    else if (baudrate==3500000){baudrate_ = B3500000;}
+    else if (baudrate==4000000){baudrate_ = B4000000;}
     else{
       printf("[MotorSerialCom][Error] %i baudrate is not valid\n", baudrate);
       exit(0);
     }
-    cfsetispeed(&tty, baud);
-    cfsetospeed(&tty, baud);
+    cfsetispeed(&tty, baudrate_);
+    cfsetospeed(&tty, baudrate_);
     // save termios settings and check for error
     if (tcsetattr(serial, TCSANOW, &tty) != 0) {
       printf("[MotorSerialCom][Error] Error while configuring termios.\n");
@@ -108,7 +117,7 @@ void MotorSerialCom::set_baudrate(unsigned int baudrate)
       exit(0);
     }
     is_serial_open = true;
-    printf("[MotorSerialCom][Info] Successfully configured termios.\n");
+    printf("[MotorSerialCom][Info] Serial baudrate is set to: %i.\n", baudrate);
 }
 
 bool MotorSerialCom::isOpen()
@@ -120,37 +129,52 @@ bool MotorSerialCom::isOpen()
 // return: Num of written bytes, or -1 if Error
 long int MotorSerialCom::write_string(std::string* msg)
 {
-    long int sent_bytes = write(serial, msg->c_str(), msg->size());
-    if(sent_bytes<0){
-        printf("[MotorSerialCom][Error] Failed to send serial message: %s\n", msg->c_str());
+    if (isOpen()){
+        long int sent_bytes = write(serial, msg->c_str(), msg->size());
+        if(sent_bytes<0){
+            printf("[MotorSerialCom][Error] Failed to send serial message: %s\n", msg->c_str());
+        }
+        else if(debug){
+            printf("[MotorSerialCom][Debug] Serial sent %li bytes of message: %s\n", sent_bytes, msg->c_str());
+        }
+        return sent_bytes;
     }
-    else if(debug){
-        printf("[MotorSerialCom][Debug] Serial sent %li bytes of message: %s\n", sent_bytes, msg->c_str());
+    else{
+        printf("[MotorSerialCom][Error] Serial port is not opened.\n");
+        return -1;
     }
-    return sent_bytes;
+    
 }
 
 // Serial write an array of uint8_t data
 // return: Num of written bytes, or -1 if Error
 long int MotorSerialCom::write_bytearray(uint8_t* bytearray, uint8_t size)
 {
-    long int sent_bytes = write(serial, bytearray, size);
-    if(sent_bytes<0){
-        printf("[MotorSerialCom][Error] Failed to send serial data: |");
-        for(int i=0; i<size; i++){
-            printf(" %i |", *(bytearray+i));
+    if(isOpen()){
+        long int sent_bytes = write(serial, bytearray, size);
+        if(sent_bytes<0){
+            printf("[MotorSerialCom][Error] Failed to send serial data: |");
+            for(int i=0; i<size; i++){
+                printf(" %i |", *(bytearray+i));
+            }
+            printf("\n");
         }
-        printf("\n");
-    }
-    else if(debug){
-        printf("[MotorSerialCom][Debug] Serial sent %li bytes of data: |");
-        for(int i=0; i<size; i++){
-            printf(" %i |", *(bytearray+i));
+        else if(debug){
+            printf("[MotorSerialCom][Debug] Serial sent %i bytes of data: |", size);
+            for(int i=0; i<size; i++){
+                printf(" %i |", *(bytearray+i));
+            }
+            printf("\n");
         }
-        printf("\n");
+        return sent_bytes;
     }
-    return sent_bytes;
+    else{
+        printf("[MotorSerialCom][Error] Serial port is not opened.\n");
+        return -1;
+    }
 }
+    
+    
 
 // Read bytes. The behaviour of read() 
 // e.g.:
@@ -164,4 +188,15 @@ long int MotorSerialCom::write_bytearray(uint8_t* bytearray, uint8_t size)
 
 
 
-// TODO: continueeeee.....
+int MotorSerialCom::close_()
+{
+    int closed = close(serial);
+    if(closed<0){
+      printf("[MotorSerialCom][Error] Error while closing the serial port\n");
+    }
+    else{
+      is_serial_open = false;
+      printf("[MotorSerialCom][Info] Serial port %s is closed.\n", serial_port_);
+    }
+    return closed;
+}

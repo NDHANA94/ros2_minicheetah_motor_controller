@@ -20,9 +20,12 @@
 class MotorSerialCom
 {
 private:
+    const char* serial_port_;
+    uint32_t baudrate_;
+    uint8_t timeout_;
     bool is_serial_initialized = false;
     bool is_serial_open = false;
-    uint8_t timeout_;
+    
     char read_buf_char [255];
     uint8_t read_buf_uint [255];
 
@@ -32,7 +35,7 @@ private:
 
 public:
     MotorSerialCom();
-    MotorSerialCom(const char* port, uint8_t timeout);
+    MotorSerialCom(const char* port, unsigned int baudrate, uint8_t timeout);
     ~MotorSerialCom();
 
     void set_baudrate(unsigned int baudrate);
@@ -42,7 +45,7 @@ public:
     // ?? read_bytearray();
 
     void read_();
-    void close_();
+    int close_();
 
     int serial;
     bool debug=true;
