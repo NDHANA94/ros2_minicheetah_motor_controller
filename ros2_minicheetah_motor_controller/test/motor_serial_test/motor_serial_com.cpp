@@ -1,5 +1,5 @@
 
-#include "ros2_minicheetah_motor_controller/motor_serial_com.h"
+#include "motor_serial_com.h"
 
 MotorSerialCom::MotorSerialCom()
 {
