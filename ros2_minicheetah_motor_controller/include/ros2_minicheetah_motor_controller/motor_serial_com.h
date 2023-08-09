@@ -20,6 +20,9 @@
 class MotorSerialCom
 {
 private:
+    const char* serial_port_;
+    uint32_t baudrate_;
+    uint8_t timeout_;
     bool is_serial_initialized = false;
     bool is_serial_open = false;
    

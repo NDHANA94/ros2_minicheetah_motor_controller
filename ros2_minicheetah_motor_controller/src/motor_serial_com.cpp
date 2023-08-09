@@ -1,6 +1,5 @@
 
 #include "ros2_minicheetah_motor_controller/motor_serial_com.h"
-
 MotorSerialCom::MotorSerialCom()
 {
     sprintf(print_msg_buf, "Initializing Serial Port....\n");
@@ -16,6 +15,7 @@ MotorSerialCom::MotorSerialCom()
         print_error(print_msg_buf);
         exit(0);
     }
+
     is_serial_initialized = true;
     set_termios();
     set_baudrate(DEFAULT_BAUDRATE);
