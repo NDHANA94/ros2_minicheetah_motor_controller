@@ -326,13 +326,13 @@ void MotorController::init_serial(std::string port, uint32_t baudrate, uint8_t t
     try
     {
         {
-            serial_.setPort(serial_port_.c_str());
-            serial_.setBaudrate(serial_baud_);
+            serial_.setPort(port.c_str());
+            serial_.setBaudrate(baudrate);
             serial_.setFlowcontrol(serial::flowcontrol_none);
             serial_.setParity(serial::parity_none);
             serial_.setStopbits(serial::stopbits_one);
             serial_.setBytesize(serial::eightbits);
-            serial::Timeout time_out = serial::Timeout::simpleTimeout(serial_timeout_);
+            serial::Timeout time_out = serial::Timeout::simpleTimeout(timeout);
             serial_.setTimeout(time_out);
             serial_.open();
         }
@@ -340,15 +340,15 @@ void MotorController::init_serial(std::string port, uint32_t baudrate, uint8_t t
     catch(serial::IOException& e)
     {
 
-        printf("Unable to open Serial port: %c\n", serial_port_.c_str());
+        printf("Unable to open Serial port: %c\n", port.c_str());
         exit(0);
     }
     if(serial_.isOpen())
     {
-        printf("Initialized Serial port: %c\n", serial_port_.c_str());
+        printf("Initialized Serial port: %c\n", port.c_str());
     }
     else{
-        printf("Unable to initialized serial port: %c\n", serial_port_.c_str());
+        printf("Unable to initialized serial port: %c\n", port.c_str());
         exit(0);
     }
 }
@@ -356,4 +356,21 @@ void MotorController::init_serial(std::string port, uint32_t baudrate, uint8_t t
 void MotorController::init_can(std::string port, uint32_t bitrate, uint8_t timeout)
 {
     printf("[MotorController] Initializing CAN port");
+}
+
+
+void  MotorController::print_error(std::string err_msg, bool endl=true){
+    std::string endl_ = "";
+    if (endl) endl_ = "\n";
+    printf("\033[1:31m[MotorController][Error] %s\033[0m%s", err_msg.c_str(), endl_.c_str());
+}
+void  MotorController::print_info(std::string info_msg, bool endl=true){
+    std::string endl_ = "";
+    if (endl) endl_ = "\n";
+    printf("\033[1:31m[MotorController][Info] %s\033[0m", info_msg.c_str(), endl_.c_str());
+}
+void  MotorController::print_debug(std::string debug_msg, bool endl=true){
+    std::string endl_ = "";
+    if (endl) endl_ = "\n";
+    printf("\033[1:31m[MotorController][Debug] %s\033[0m", debug_msg.c_str(), endl_.c_str());
 }

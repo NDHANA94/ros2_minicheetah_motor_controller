@@ -1,60 +1,31 @@
-#include "motor_controller_test.h"
+/*
+MIT License
 
+Copyright (c) 2023 Nipun Dhananjaya
 
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
 
-// ========================================================================================
-// motor default constructor
-Motor::Motor()
-{
-    id = 0;
-    Error = 0;
-    // rx_packet = new uint8_t [6];
-    // tx_packet = new uint8_t [9];
-    // motor_params = new uint16_t [5];
-    // control_limits = new int8_t [4];
-    // control_params = new uint8_t [5];
-    // states = new float [4];
-}
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
 
-// motor Parameterized constructor
-Motor::Motor(uint8_t id_, MotorParams motor_params_, MotorControlLimits control_limits_)
-{
-    id = id_;
-    Error = 0;
-    params = motor_params_;
-    control_limits = control_limits_;
-    // rx_packet = new uint8_t [6];
-    // tx_packet = new uint8_t [9];
-    // control_limits = new int8_t [4];
-    // motor_params = new uint16_t [5];
-    // control_params = new uint8_t [5];
-    // states = new float [4];
-}
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+*/
 
-Motor::~Motor()
-{   
-    printf("closing motor id-%i \n", id);
-    // delete [] rx_packet;
-    // delete [] tx_packet;
-    // delete [] motor_params;
-    // delete [] control_limits;
-    // delete [] control_params;
-    // delete [] states;
-    // rx_packet = nullptr;
-    // tx_packet = nullptr;
-    // motor_params = nullptr;
-    // control_limits = nullptr;
-    // control_params = nullptr; 
-    // states = nullptr;
-}
-
-
-// =======================================================================================
-
-
+#include "motor_controller.h"
 
 // Motor Module Parameterized constructor
-MotorModule::MotorModule(uint8_t com_interface, uint8_t num_of_motors)
+MotorController::MotorController(uint8_t com_interface, uint8_t num_of_motors)
 {
   _com_interface = com_interface;
   _num_of_motors = num_of_motors;
@@ -63,10 +34,10 @@ MotorModule::MotorModule(uint8_t com_interface, uint8_t num_of_motors)
 }
 
 // Motor Module deconstructor
-MotorModule::~MotorModule()
+MotorController::~MotorController()
 {
     // delete allocated memory
-    printf("deleting motor alloc\n");
+    printf("[MotorController] deleting motor alloc\n");
     delete [] motor;
     motor = nullptr;
 
@@ -85,7 +56,7 @@ MotorModule::~MotorModule()
     }
 }
 
-Motor* MotorModule::add_motor(uint8_t id)
+Motor* MotorController::add_motor(uint8_t id)
 {
     uint8_t m_index = _num_of_available_motors;
     Motor *m = &motor[m_index];
@@ -98,7 +69,7 @@ Motor* MotorModule::add_motor(uint8_t id)
     return m;
 }
 
-void MotorModule::set_motor_params(Motor* motor_, float max_p, float max_v, float max_kp, float max_kd, float max_iff)
+void MotorController::set_motor_params(Motor* motor_, float max_p, float max_v, float max_kp, float max_kd, float max_iff)
 {
     motor_->params.max_p = max_p;
     motor_->params.max_v = max_v;
@@ -108,7 +79,7 @@ void MotorModule::set_motor_params(Motor* motor_, float max_p, float max_v, floa
     motor_->config_status[0] = true;
 }
 
-void MotorModule::set_control_limits(Motor* motor_, float min_p, float max_p, float max_v, float max_i)
+void MotorController::set_control_limits(Motor* motor_, float min_p, float max_p, float max_v, float max_i)
 {
     motor_->control_limits.min_p = min_p;
     motor_->control_limits.max_p = max_p;
@@ -117,7 +88,7 @@ void MotorModule::set_control_limits(Motor* motor_, float min_p, float max_p, fl
     motor_->config_status[1] = true;
 }
 
-void MotorModule::enable_motor(Motor* motor_)
+void MotorController::enable_motor(Motor* motor_)
 {
      
     uint8_t tx[9] = {motor_->id, 0xFF, 0xFF, 0XFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFC};
@@ -125,7 +96,7 @@ void MotorModule::enable_motor(Motor* motor_)
     /* TODO: send this cmd over selected com_interface here: */
 
     // debug print
-    printf("motor id-%i enable cmd: ", motor_->id);
+    printf("[MotorController] motor id-%i enable cmd: ", motor_->id);
     for (int i=0; i<sizeof(tx); i++){
         printf("| %i |", tx[i]);
     }
@@ -135,7 +106,7 @@ void MotorModule::enable_motor(Motor* motor_)
     motor_->states.is_enabled = true;
 }
 
-void MotorModule::enable_all_motors()
+void MotorController::enable_all_motors()
 {
     for(int i = 0; i<_num_of_available_motors; i++){
         uint8_t tx[9] = {motor[i].id, 0xFF, 0xFF, 0XFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFC};
@@ -143,7 +114,7 @@ void MotorModule::enable_all_motors()
         /* TODO: send cmd over selected com_interface here: */
 
         // debug print
-        printf("motor id-%i enable cmd: ", motor[i].id);
+        printf("[MotorController] motor id-%i enable cmd: ", motor[i].id);
         for (int i=0; i<sizeof(tx); i++){
             printf("| %i |", tx[i]);
         }
@@ -154,14 +125,14 @@ void MotorModule::enable_all_motors()
     } 
 }
 
-void MotorModule::disable_motor(Motor* motor_)
+void MotorController::disable_motor(Motor* motor_)
 {
     uint8_t tx[9] = {motor_->id, 0xFF, 0xFF, 0XFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFD};
 
     /* TODO: send this cmd over selected com_interface here: */
 
     // debug print
-    printf("motor id-%i disable cmd: ", motor_->id);
+    printf("[MotorController] motor id-%i disable cmd: ", motor_->id);
     for (int i=0; i<sizeof(tx); i++){
         printf("| %i |", tx[i]);
     }
@@ -170,7 +141,7 @@ void MotorModule::disable_motor(Motor* motor_)
     motor_->states.is_enabled = false;
 }
 
-void MotorModule::disable_all_motors()
+void MotorController::disable_all_motors()
 {
     for(int i = 0; i<_num_of_available_motors; i++){
         uint8_t tx[9] = {motor[i].id, 0xFF, 0xFF, 0XFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFD};
@@ -178,7 +149,7 @@ void MotorModule::disable_all_motors()
         /* TODO: send cmd over selected com_interface here: */
 
         // debug print
-        printf("motor id-%i disable cmd: ", motor[i].id);
+        printf("[MotorController] motor id-%i disable cmd: ", motor[i].id);
         for (int i=0; i<sizeof(tx); i++){
             printf("| %i |", tx[i]);
         }
@@ -188,14 +159,14 @@ void MotorModule::disable_all_motors()
     } 
 }
 
-void MotorModule::set_motor_zero(Motor* motor_)
+void MotorController::set_motor_zero(Motor* motor_)
 {
     uint8_t tx[9] = {motor_->id, 0xFF, 0xFF, 0XFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFE};
 
     /* TODO: send this cmd over selected com_interface here: */
 
     // debug print
-    printf("motor id-%i set_zero cmd: ", motor_->id);
+    printf("[MotorController] motor id-%i set_zero cmd: ", motor_->id);
     for (int i=0; i<sizeof(tx); i++){
         printf("| %i |", tx[i]);
     }
@@ -203,29 +174,31 @@ void MotorModule::set_motor_zero(Motor* motor_)
 }
 
 
-MotorStates MotorModule::get_motor_states(Motor* motor_)
+MotorStates MotorController::get_motor_states(Motor* motor_)
 {
     if (motor_->config_status[0]){
         // send previous cmd to the motor and read the feedback
     
-        /* TODO: 1. read 6 bytes of serial or can and save last 5 data into rx_packet only if rx_packet was sent by motor related motor id */
+        /* TODO: 1. read 6 bytes of serial or can and save the into rx_packet only if rx_packet was sent by motor id: _id */
+
+        uint8_t rx_data[] = {motor_->id,2,3,4,5,6}; // TODO: remove this temp line
 
         // unpack rx_packet
         unpack_rx_packet(motor_);
 
     }
     else{
-        printf("Error: motor %i paramters are not set.\n", motor_->id);
-        printf("Please set parameters of motor id-%i.\n", motor_->id);
-        // throw "Motor Parameters are NOT set";
-        abort();
+        printf("[MotorController] Error: motor %i paramters are not set.\n", motor_->id);
+        printf("[MotorController] Please set parameters of motor id-%i.\n", motor_->id);
+        
+        // abort();
     }
 
     return motor_->states;
 }
 
 
-void MotorModule::set_motor_position(Motor* motor_, ControlCmds cmd)
+void MotorController::set_motor_position(Motor* motor_, ControlCmds cmd)
 {
     // set motor commands
     motor_->control_cmd.p_des = cmd.p_des;
@@ -240,36 +213,32 @@ void MotorModule::set_motor_position(Motor* motor_, ControlCmds cmd)
     //
 
     // debug print
-    printf("[setting motor position] cmd: ");
+    printf("[MotorController] [setting motor position] cmd: ");
     for(int i=0; i<sizeof(motor_->tx_packet); i++){
         printf(" %i ", motor_->tx_packet[i]);
     }
 }
 
-Motor* MotorModule::get_motors()
-{
-    return motor;
-}
-
 /* ~ Tx Packet Data Structure ~
-8 bit motor_id
-16 bit position command, between -4*pi and 4*pi
-12 bit velocity command, between -30 and + 30 rad/s
-12 bit kp, between 0 and 500 N-m/rad
-12 bit kd, between 0 and 100 N-m*s/rad
-12 bit feed forward torque, between -18 and 18 N-m
-CAN Packet is 8 8-bit words
-Formatted as follows.  For each quantity, bit 0 is LSB
-0: [motor_id[7-0]]
-1: [position[15-8]]
-2: [position[7-0]]
-3: [velocity[11-4]]
-4: [velocity[3-0], kp[11-8]]
-5: [kp[7-0]]
-6: [kd[11-4]]
-7: [kd[3-0], torque[11-8]]
-8: [torque[7-0]] */
-void MotorModule::pack_tx_packet(Motor * m)
+* 8 bit motor_id
+* 16 bit position command, between -4*pi and 4*pi
+* 12 bit velocity command, between -30 and + 30 rad/s
+* 12 bit kp, between 0 and 500 N-m/rad
+* 12 bit kd, between 0 and 100 N-m*s/rad
+* 12 bit feed forward torque, between -18 and 18 N-m
+* CAN Packet is 8 8-bit words
+* Formatted as follows.  For each quantity, bit 0 is LSB
+* 0: [motor_id[7-0]]
+* 1: [position[15-8]]
+* 2: [position[7-0]]
+* 3: [velocity[11-4]]
+* 4: [velocity[3-0], kp[11-8]]
+* 5: [kp[7-0]]
+* 6: [kd[11-4]]
+* 7: [kd[3-0], torque[11-8]]
+* 8: [torque[7-0]] 
+*/
+void MotorController::pack_tx_packet(Motor * m)
 {
     // limit data to be within bounds
     float p_des = fminf(fmaxf(-m->params.max_p, m->control_cmd.p_des), m->params.max_p);
@@ -296,17 +265,18 @@ void MotorModule::pack_tx_packet(Motor * m)
 }
 
 /* ~ Rx Packet Data Structure ~
- 16 bit position, between -4*pi and 4*pi
- 12 bit velocity, between -30 and + 30 rad/s
- 12 bit current, between -40 and 40;
- CAN Packet is 5 8-bit words
- Formatted as follows.  For each quantity, bit 0 is LSB
- 0: [position[15-8]]
- 1: [position[7-0]]
- 2: [velocity[11-4]]
- 3: [velocity[3-0], current[11-8]]
- 4: [current[7-0]] */
-void MotorModule::unpack_rx_packet(Motor* motor_)
+ * 16 bit position, between -4*pi and 4*pi
+ * 12 bit velocity, between -30 and + 30 rad/s
+ * 12 bit current, between -40 and 40;
+ * CAN Packet is 5 8-bit words
+ * Formatted as follows.  For each quantity, bit 0 is LSB
+ * 0: [position[15-8]]
+ * 1: [position[7-0]]
+ * 2: [velocity[11-4]]
+ * 3: [velocity[3-0], current[11-8]]
+ * 4: [current[7-0]] 
+*/
+void MotorController::unpack_rx_packet(Motor* motor_)
 {
     // unpack ints from rx_packet
     int p_int = (motor_->rx_packet[0]<<8) | motor_->rx_packet[1];
@@ -319,34 +289,88 @@ void MotorModule::unpack_rx_packet(Motor* motor_)
     motor_->states.curent   = uint2float(i_int, -motor_->params.max_iff, motor_->params.max_iff, 12);
 }
 
-
-float MotorModule::fmaxf(float x, float y){
+float MotorController::fmaxf(float x, float y){
     return (((x)>(y)) ? (x) : (y));
 }
 
-float MotorModule::fminf(float x, float y){
+float MotorController::fminf(float x, float y){
     return (((x) < (y)) ? (x) : (y));
 }
 
-int MotorModule::float2uint(float x, float x_min, float x_max, int bits){
+int MotorController::float2uint(float x, float x_min, float x_max, int bits){
     float span = x_max = x_min;
     float offset = x_min;
     return (int) ((x-offset) * ((float)((1<<bits)-1))/span);
 }
 
-float MotorModule::uint2float(int x, float x_min, float x_max, int bits){
+float MotorController::uint2float(int x, float x_min, float x_max, int bits){
     float span = x_max - x_min;
     float offset = x_min;
     return ((float)x)*span/((float)((1<<bits)-1)) + offset;
 }
 
-// bool init_serial(char* port, int baudrate, float timeout)
-// {
-    
-// } 
+void MotorController::send_motor_cmd(uint8_t tx[9])
+{
+    if(_com_interface==0){
+        
+    }
+    else{
+        
+    }
+}
 
-// bool serial_write(uint8_t* msg, uint8_t size)
-// {
 
-//     return 0;
-// }
+void MotorController::init_serial(std::string port, uint32_t baudrate, uint8_t timeout)
+{
+    printf("[MotorController] Initializing CAN port");
+    try
+    {
+        {
+            serial_.setPort(port.c_str());
+            serial_.setBaudrate(baudrate);
+            serial_.setFlowcontrol(serial::flowcontrol_none);
+            serial_.setParity(serial::parity_none);
+            serial_.setStopbits(serial::stopbits_one);
+            serial_.setBytesize(serial::eightbits);
+            serial::Timeout time_out = serial::Timeout::simpleTimeout(timeout);
+            serial_.setTimeout(time_out);
+            serial_.open();
+        }
+    }
+    catch(serial::IOException& e)
+    {
+
+        printf("Unable to open Serial port: %s\n", port.c_str());
+        exit(0);
+    }
+    if(serial_.isOpen())
+    {
+        printf("Initialized Serial port: %s\n", port.c_str());
+    }
+    else{
+        printf("Unable to initialized serial port: %s\n", port.c_str());
+        exit(0);
+    }
+}
+
+void MotorController::init_can(std::string port, uint32_t bitrate, uint8_t timeout)
+{
+    printf("[MotorController] Initializing CAN port");
+}
+
+
+void  MotorController::print_error(std::string err_msg, bool endl=true){
+    std::string endl_ = "";
+    if (endl) endl_ = "\n";
+    printf("\033[1:31m[MotorController][Error] %s\033[0m%s", err_msg.c_str(), endl_.c_str());
+}
+void  MotorController::print_info(std::string info_msg, bool endl=true){
+    std::string endl_ = "";
+    if (endl) endl_ = "\n";
+    printf("\033[1:31m[MotorController][Info] %s\033[0m%s", info_msg.c_str(), endl_.c_str());
+}
+void  MotorController::print_debug(std::string debug_msg, bool endl=true){
+    std::string endl_ = "";
+    if (endl) endl_ = "\n";
+    printf("\033[1:31m[MotorController][Debug] %s\033[0m%s", debug_msg.c_str(), endl_.c_str());
+}

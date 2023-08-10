@@ -3,13 +3,15 @@
     subscriber_name: "motor_cmds" 
     com_interface: "serial" # "serial" or "can"
 
-    serial_port: "/dev/ttyUSB0"       # [str]
-    serial_baud: 115200               # [int]
-    serial_timeout: 20                # [int]
+    serial_port:
+      port: "/dev/ttyUSB0"       # [str]
+      baudrate: 115200               # [int]
+      timeout: 20                # [int]
 
-    can_port: "/dev/ttyUSB0"
-    can_interface: "vcan0"
-    can_baud: 1000000
+    can_port:
+      port: "/dev/ttyUSB0"
+      interface: "vcan0"
+      bitrate: 1000000
 
 
     read_cmd_response_delay: 0.0001 # sec

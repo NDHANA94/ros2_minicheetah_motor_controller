@@ -5,7 +5,7 @@
 #include <yaml.h>
 #include <assert.h>
 
-#include "motor_controller_test.h"
+#include "motor_controller.h"
 // #include "rclcpp/rclcpp.hpp"
 
 
@@ -50,7 +50,7 @@ void print_rx_data(Motor* m)
 
 int main(int argc, char **argv)
 {
-    MotorModule m_drv{0, 4};
+    MotorController m_drv{0, 4};
 
     Motor* m1 = m_drv.add_motor(1);
     Motor* m2 = m_drv.add_motor(2);

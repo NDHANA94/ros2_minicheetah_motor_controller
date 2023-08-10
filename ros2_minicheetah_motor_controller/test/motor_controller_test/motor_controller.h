@@ -35,8 +35,8 @@ SOFTWARE.
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 
-#include "serial/serial.h"
-#include "rclcpp/rclcpp.hpp"
+#include <serial/serial.h>
+// #include "rclcpp/rclcpp.hpp"
 
 #pragma once
 class MotorController
@@ -69,9 +69,9 @@ private:
     void init_can(std::string port, uint32_t bitrate, uint8_t timeout);
     void send_motor_cmd(uint8_t tx[9]);
 
-    void print_error(std::string err_msg, bool endl=true);
-    void print_info(std::string info_msg, bool endl=true);
-    void print_debug(std::string debug_msg, bool endl=true);
+    void print_error(std::string err_msg, bool endl);
+    void print_info(std::string info_msg, bool endl);
+    void print_debug(std::string debug_msg, bool endl);
 
 
 public:

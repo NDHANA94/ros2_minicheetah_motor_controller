@@ -206,6 +206,7 @@ void MotorSerialCom::read_()
     //     printf(" %i |", *(read_buf_char + i));
     // }
     // printf(" \n");
+
 }
 
 int MotorSerialCom::close_()
