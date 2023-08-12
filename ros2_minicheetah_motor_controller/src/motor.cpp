@@ -24,47 +24,138 @@ SOFTWARE.
 
 #include "ros2_minicheetah_motor_controller/motor.h"
 
-// motor default constructor
 Motor::Motor()
 {
+    
     id = 0;
-    Error = 0;
-    // rx_packet = new uint8_t [6];
-    // tx_packet = new uint8_t [9];
-    // motor_params = new uint16_t [5];
-    // control_limits = new int8_t [4];
-    // control_params = new uint8_t [5];
-    // states = new float [4];
+    state.position.raw = 0;
+    state.velocity.raw = 0;
+    state.current.raw = 0;
+    state.position.unpacked = 0;
+    state.velocity.unpacked = 0;
+    state.current.unpacked = 0;
+    ctrl_param.p_des.max = 12.5;
+    ctrl_param.p_des.min = -ctrl_param.p_des.max;
+    ctrl_param.v_des.max = 65.0;
+    ctrl_param.v_des.min = -ctrl_param.v_des.max;
+    ctrl_param.kp.max = 500;
+    ctrl_param.kp.min = 0;
+    ctrl_param.kd.max = 5.0;
+    ctrl_param.kd.min = 0;
+    ctrl_param.i_ff.max = 20;
+    ctrl_param.i_ff.min = -ctrl_param.i_ff.min;
+    status = 0b0000;
+    
 }
 
-// motor Parameterized constructor
-Motor::Motor(uint8_t id_, MotorParams motor_params_, MotorControlLimits control_limits_)
-{
-    id = id_;
-    Error = 0;
-    params = motor_params_;
-    control_limits = control_limits_;
-    // rx_packet = new uint8_t [6];
-    // tx_packet = new uint8_t [9];
-    // control_limits = new int8_t [4];
-    // motor_params = new uint16_t [5];
-    // control_params = new uint8_t [5];
-    // states = new float [4];
-}
+// // motor Parameterized constructor
+// Motor::Motor(uint8_t id_)
+// {
+    
+// }
 
 Motor::~Motor()
 {   
-    printf("closing motor id-%i \n", id);
-    // delete [] rx_packet;
-    // delete [] tx_packet;
-    // delete [] motor_params;
-    // delete [] control_limits;
-    // delete [] control_params;
-    // delete [] states;
-    // rx_packet = nullptr;
-    // tx_packet = nullptr;
-    // motor_params = nullptr;
-    // control_limits = nullptr;
-    // control_params = nullptr; 
-    // states = nullptr;
+    printf("Motor class constructor awoked");
+}
+
+int Motor::enable()
+{
+    printf("Motor class deconstructor awoked");
+    return 0;
+}
+
+int Motor::disable()
+{
+    return 0;
+}
+
+int Motor::set_zero()
+{
+    return 0;
+}
+
+int Motor::set_position(double position)
+{
+    return 0;
+}
+
+int Motor::set_position(double position, double velocity)
+{
+    return 0;
+}
+
+int Motor::set_position(double position, double velocity, double kp, double kd, double i_ff)
+{
+    return 0;
+}
+
+int Motor::set_velocity(double velocity)
+{
+    return 0;
+}
+
+int Motor::set_kp(double kp)
+{
+    return 0;
+}
+
+int Motor::set_kd(double kd)
+{
+    return 0;
+}
+
+int Motor::set_iff(double iff)
+{
+    return 0;
+}
+
+int Motor::set_position_range(double min, double max)
+{
+    return 0;
+}
+
+int Motor::set_velocity_range(double min, double max)
+{
+    return 0;
+}
+
+int Motor::set_kp_range(double min, double max)
+{
+    return 0;
+}
+
+int Motor::set_kd_range(double min, double max)
+{
+    return 0;
+}
+
+int Motor::set_iff_range(double min, double max)
+{
+    return 0;
+}
+
+int Motor::set_current_limit(double max_current)
+{
+    return 0;
+}
+
+void Motor::pack_cmd(control_params_t* ctrl_params)
+{
+    
+}
+
+int Motor::send_can(can_t* can)
+{
+    return 0;
+}
+
+int Motor::read_can()
+{
+    return 0;
+}
+
+void Motor::unpack_read()
+{
+
 }

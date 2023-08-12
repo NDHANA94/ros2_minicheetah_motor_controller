@@ -20,22 +20,26 @@ find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
 find_package(serial REQUIRED)
+find_package(ament_index_cpp REQUIRED)
 
-add_executable(motor_node src/motor_node.cpp)
+
+add_executable(motor_node src/motor_node.cpp src/motor.cpp)
 target_include_directories(motor_node PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>)
 ament_target_dependencies(
   motor_node
+  ament_index_cpp
   rclcpp
   std_msgs
   serial
 )
 
-install(TARGETS motor_node
+install(TARGETS motor_node 
   DESTINATION lib/${PROJECT_NAME})
 
 install(DIRECTORY
+  bash_scripts
   config
   launch
   src

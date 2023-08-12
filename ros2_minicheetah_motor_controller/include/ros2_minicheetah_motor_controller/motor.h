@@ -26,54 +26,111 @@ SOFTWARE.
 */
 
 #include <iostream>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
 
-struct {
-    float max_p;
-    float max_v;
-    float max_kp;
-    float max_kd;
-    float max_iff;
-} typedef MotorParams;
+#include <net/if.h>
+#include <sys/ioctl.h>
+#include <sys/socket.h>
+
+#include <linux/can.h>
+#include <linux/can/raw.h>
+
+#include "rclcpp/rclcpp.hpp"
+
+
+
+#define MAX_NUM_MOTORS 12
+
+// ---------------------
+struct{
+    double set;
+    double min;
+    double max;
+}typedef param_t;
 
 struct{
-    float min_p;
-    float max_p;
-    float max_v;
-    float max_i;
-}typedef MotorControlLimits;
+    param_t p_des;
+    param_t v_des;
+    param_t kp;
+    param_t kd;
+    param_t i_ff;
+    double max_motor_current;
+}typedef control_params_t;
+// ----------------------
 
 struct{
-    float p_des;
-    float v_des;
-    float kp;
-    float kd;
-    float i_ff;
-}typedef ControlCmds;
+    uint8_t raw;
+    double  unpacked;
+}typedef state_t_;
 
-struct {
-    bool is_enabled;
-    float position;
-    float velocity;
-    float curent;
-}typedef MotorStates;
+struct{
+    state_t_ position;
+    state_t_ velocity;
+    state_t_ current;
+}typedef state_t;
+// ----------------------
 
-struct Motor
+struct{
+    int s = -1;
+    struct sockaddr_can addr;
+    struct can_frame frame;
+    struct ifreq ifr;
+    char *ifname;
+    int ret = EXIT_FAILURE;
+}typedef can_t;
+
+struct{
+    double p_max;
+    double p_min;
+    double v_max;
+    double v_min;
+    double i_max;
+    double i_min;
+}typedef limit_t;
+
+// =====================================================
+#pragma once
+class Motor
 {
-    uint8_t id;
-    uint8_t rx_packet[6]; // [ id , p_H[8] , p_L[8] , v_H[8[] , v_L[4]+i_H[4] , i_L[8] ]
-    uint8_t tx_packet[9]; // [ id, p_H[8], p_L[8], v_H[8], v_L[4]+kp_H[4], kp_L[8], kd_H[8], kd_L[4]+iff_H[4], iff_L[8] ]
-    uint8_t Error;
-    bool config_status[2]; // config_status[0] == true; -> if motor_params were added
-                           // config_status[1] == true; -> if motor control limits were added 
+private:
+    int status; // ....| is_enable | is_available | error |
 
-    MotorParams params;
-    MotorControlLimits control_limits; 
-    ControlCmds control_cmd; 
-    MotorStates states;
-
+    void pack_cmd(control_params_t* ctrl_params);
+    int send_can(can_t* can);
+    int read_can();
+    void unpack_read();
+    
+public:
     Motor();
-    Motor(uint8_t id_, MotorParams motor_params_, MotorControlLimits control_limits_);
     ~Motor();
+
+    limit_t limit;
+    uint8_t id;
+    state_t state;
+    control_params_t ctrl_param;
+
+    can_t* can_ptr;
+    
+    int enable();
+    int disable();
+    int set_zero();
+    int set_position(double position);
+    int set_position(double position, double velocity);
+    int set_position(double position, double velocity, double kp, double kd, double i_ff);
+    int set_velocity(double velocity);
+    int set_kp(double kp);
+    int set_kd(double kd);
+    int set_iff(double iff);
+    int set_position_range(double min, double max);
+    int set_velocity_range(double min, double max);
+    int set_kp_range(double min, double max);
+    int set_kd_range(double min, double max);
+    int set_iff_range(double min, double max);
+    int set_current_limit(double max_current); // motor will be disabled once the motor currunt exceed this limit.
+    
 };
 
 

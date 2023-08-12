@@ -1,27 +1,154 @@
 /minicheetah_motor_node:
   ros__parameters:
     subscriber_name: "motor_cmds" 
-    com_interface: "serial" # "serial" or "can"
 
-    serial_port:
-      port: "/dev/ttyUSB0"       # [str]
-      baudrate: 115200               # [int]
-      timeout: 20                # [int]
-
-    can_port:
-      port: "/dev/ttyUSB0"
-      interface: "vcan0"
-      bitrate: 1000000
+    can_interface:
+      interface_type: "SLCAND" # SLCAND, CAN
+      port: "/dev/serial/by-id/usb-Silicon_Labs_CP2102_USB_to_UART_Bridge_Controller_0001-if00-port0"
+      interface_name: "can0"
+      bitrate_code: 8 # 0-10[Kbps], 1-20[Kbps], 2-50[Kbps], 3-100[Kbps], 4-125[Kbps]
+                            # 5-250[Kbps], 6-500[Kbps], 7-800[Kbps], 8-1000[Kbps]
+      baudrate: 1000000
+      txqueuelen: 1000
 
 
     read_cmd_response_delay: 0.0001 # sec
     read_set_zero_response_delay: 0.1 # sec
     state_update_frequency: 1000 # Hz
 
-    num_of_motors: 3
+    num_of_motors: 12 # maximum num_of_motors = 12
 
-    max_p: 12.5
-    max_v: 65.0
-    max_kp: 500.0
-    max_kd: 5.0
-    max_iff: 20.0
+    m1_params: # FR_HIP
+      id: 1
+      max_p: 12.5
+      max_v: 65.0
+      max_kp: 500.0
+      max_kd: 5.0
+      max_iff: 20.0
+      limit_p: [-1, 1]
+      limit_v: 0.5
+      limit_i: 18
+    
+    m2_params: # FR_THIGH
+      id: 2
+      max_p: 12.5
+      max_v: 65.0
+      max_kp: 500.0
+      max_kd: 5.0
+      max_iff: 20.0
+      limit_p: [-1, 1]
+      limit_v: 0.5
+      limit_i: 18
+
+    m3_params: # FR_CALF
+      id: 3
+      max_p: 12.5
+      max_v: 65.0
+      max_kp: 500.0
+      max_kd: 5.0
+      max_iff: 20.0
+      limit_p: [-1, 1]
+      limit_v: 0.5
+      limit_i: 18
+
+    m4_params: # FL_HIP
+      id: 4
+      max_p: 12.5
+      max_v: 65.0
+      max_kp: 500.0
+      max_kd: 5.0
+      max_iff: 20.0
+      limit_p: [-1, 1]
+      limit_v: 0.5
+      limit_i: 18
+
+    m5_params: # FL_THIGH
+      id: 5
+      max_p: 12.5
+      max_v: 65.0
+      max_kp: 500.0
+      max_kd: 5.0
+      max_iff: 20.0
+      limit_p: [-1, 1]
+      limit_v: 0.5
+      limit_i: 18
+
+    m6_params:
+      id: 6
+      max_p: 12.5
+      max_v: 65.0
+      max_kp: 500.0
+      max_kd: 5.0
+      max_iff: 20.0
+      limit_p: [-1, 1]
+      limit_v: 0.5
+      limit_i: 18
+    
+    m7_params:
+      id: 7
+      max_p: 12.5
+      max_v: 65.0
+      max_kp: 500.0
+      max_kd: 5.0
+      max_iff: 20.0
+      limit_p: [-1, 1]
+      limit_v: 0.5
+      limit_i: 18
+
+    m8_params:
+      id: 8
+      max_p: 12.5
+      max_v: 65.0
+      max_kp: 500.0
+      max_kd: 5.0
+      max_iff: 20.0
+      limit_p: [-1, 1]
+      limit_v: 0.5
+      limit_i: 18
+
+    m9_params:
+      id: 9
+      max_p: 12.5
+      max_v: 65.0
+      max_kp: 500.0
+      max_kd: 5.0
+      max_iff: 20.0
+      limit_p: [-1, 1]
+      limit_v: 0.5
+      limit_i: 18
+
+    m10_params:
+      id: 10
+      max_p: 12.5
+      max_v: 65.0
+      max_kp: 500.0
+      max_kd: 5.0
+      max_iff: 20.0
+      limit_p: [-1, 1]
+      limit_v: 0.5
+      limit_i: 18
+
+    m11_params:
+      id: 11
+      max_p: 12.5
+      max_v: 65.0
+      max_kp: 500.0
+      max_kd: 5.0
+      max_iff: 20.0
+      limit_p: [-1, 1]
+      limit_v: 0.5
+      limit_i: 18
+
+    m12_params:
+      id: 12
+      max_p: 12.5
+      max_v: 65.0
+      max_kp: 500.0
+      max_kd: 5.0
+      max_iff: 20.0
+      limit_p: [-1, 1]
+      limit_v: 0.5
+      limit_i: 18
+
+    
+
