@@ -16,8 +16,19 @@
 
 #define PKG_NAME "ros2_minicheetah_motor_controller"
 
+#define BLACK  "\033[0;30m"
+#define RED    "\033[0;31m"
+#define GREEN  "\033[0;32m"
+#define YELLOW "\033[0;33m"
+#define BLUE   "\033[0;34m"
+#define PURPLE "\033[0;35m"
+#define CYAN   "\033[0;36m"
+#define WHITE  "\033[0;37m"
+#define NC  "\033[0m"
+
 
 using namespace std::chrono_literals;
+
 
 
 struct{
@@ -49,13 +60,15 @@ private:
     void read_parameters();
     void init_slcan();
     void init_can();
+    int can_read();
+
     void subscription_callback(const std_msgs::msg::Float64MultiArray::SharedPtr msg) const;
     void timer_callback();
 
     std::string subscriber_name_ = "motor_cmds", com_interface_;
     double read_cmd_response_delay_, read_set_zero_response_delay_, max_p_, max_v_, max_kp_, max_kd_, max_iff_;
     int motor_state_update_freq_, num_of_motors_;
-    std::string param_child[9] = {"id", "max_p", "max_v", "max_kp", "max_kd", "max_iff", "limit_p", "limit_v", "limit_t"};
+    std::string param_child[9] = {"id", "max_p", "max_v", "max_kp", "max_kd", "max_iff", "limit_p", "limit_v", "limit_i"};
 
     can_port_t _can;
     std::string pkg_share_dir;
@@ -69,7 +82,7 @@ public:
     MiniCheetahMotorController();
     ~MiniCheetahMotorController();
 
-    Motor* motor;
+    Motor* motor; // pointer to create an array of Motor objects
 
 
 };
@@ -88,15 +101,3 @@ public:
 // }typedef serial_port_t;
 
 
-/* 
-printf color code:
-  30 - black
-  31 - red
-  32 - green
-  33 - yellow
-  34 - blue
-  35 - purple
-  36 - cyan
-  37 - white
-
- */

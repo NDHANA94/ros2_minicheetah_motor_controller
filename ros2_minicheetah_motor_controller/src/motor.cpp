@@ -26,57 +26,134 @@ SOFTWARE.
 
 Motor::Motor()
 {
-    
     id = 0;
-    state.position.raw = 0;
-    state.velocity.raw = 0;
-    state.current.raw = 0;
-    state.position.unpacked = 0;
-    state.velocity.unpacked = 0;
-    state.current.unpacked = 0;
-    ctrl_param.p_des.max = 12.5;
-    ctrl_param.p_des.min = -ctrl_param.p_des.max;
-    ctrl_param.v_des.max = 65.0;
-    ctrl_param.v_des.min = -ctrl_param.v_des.max;
-    ctrl_param.kp.max = 500;
-    ctrl_param.kp.min = 0;
-    ctrl_param.kd.max = 5.0;
-    ctrl_param.kd.min = 0;
-    ctrl_param.i_ff.max = 20;
-    ctrl_param.i_ff.min = -ctrl_param.i_ff.min;
-    status = 0b0000;
-    
+    status = 0;
 }
-
-// // motor Parameterized constructor
-// Motor::Motor(uint8_t id_)
-// {
-    
-// }
 
 Motor::~Motor()
 {   
+    delete [] can_ptr;
     printf("Motor class constructor awoked");
 }
 
-int Motor::enable()
+void Motor::set_can(can_t* can)
 {
-    printf("Motor class deconstructor awoked");
+    can_ptr = can;
+}
+
+void Motor::set_id(int id_)
+{
+    id = id_;
+    status |= MOTOR_ID_SET; // set id_set bit of status flag
+}
+
+void Motor::set_position_range(double max)
+{
+    motor_params.p_des.max = max;
+    motor_params.p_des.min = -motor_params.p_des.max;
+    // set 'set p_des' bit of the set_status flag
+    motor_params.set_status |= PDES_PARAMS_SET;
+    // if all motor params are set, then set the 'params set' (4th) bit of the status.
+    if (this->motor_params.set_status == 0b11111) status |= MOTOR_PARAMS_SET;
+}
+
+void Motor::set_velocity_range(double max)
+{
+    motor_params.v_des.max = max;
+    motor_params.v_des.min = -motor_params.v_des.max;
+    // set 'set v_des' bit of the set_status flag
+    motor_params.set_status |= VDES_PARAMS_SET;
+    // if all motor params are set, then set the 'params set' (4th) bit of the status.
+    if (motor_params.set_status == 0b11111) status |= MOTOR_PARAMS_SET;
+}
+
+void Motor::set_kp_range(double max)
+{
+    motor_params.kp.max = max;
+    motor_params.kp.min = 0.0;
+    // set 'set kp' bit of the set_status flag
+    motor_params.set_status |= KP_PARAMS_SET;
+    // if all motor params are set, then set the 'params set' (4th) bit of the status.
+    if (motor_params.set_status == 0b11111) status |= MOTOR_PARAMS_SET;
+}
+
+void Motor::set_kd_range(double max)
+{
+    motor_params.kd.max = max;
+    motor_params.kd.min = 0.0;
+    // set 'set kd' bit of the set_status flag
+    motor_params.set_status |= KD_PARAMS_SET;
+    // if all motor params are set, then set the 'params set' (4th) bit of the status.
+    if (motor_params.set_status == 0b11111) status |= MOTOR_PARAMS_SET;
+}
+
+void Motor::set_iff_range(double max)
+{
+    motor_params.i_ff.max = max;
+    motor_params.i_ff.min = -motor_params.i_ff.max;
+    // set 'set i_ff' bit of the set_status flag
+    motor_params.set_status |= IFF_PARAMS_SET;
+    // if all motor params are set, then set the 'params set' (4th) bit of the status.
+    if (motor_params.set_status == 0b11111) set_motor_status(MOTOR_PARAMS_SET);
+}
+
+void Motor::set_limit_position(std::vector<double> limit_p)
+{
+    if(limit_p[0] > limit_p[1]){
+        double temp = limit_p[0];
+        limit_p[0] = limit_p[1];
+        limit_p[1] = temp;
+    }
+    limit.position.min = limit_p[0];
+    limit.position.max = limit_p[1];
+}
+
+void Motor::set_limit_velocity(double limit_v)
+{
+    limit.velocity.min = limit_v;
+    limit.velocity.max = -limit.velocity.min;
+}
+
+void Motor::set_limit_current(double limit_i)
+{
+  limit.current.max = limit_i;
+  limit.current.min = limit.current.max;
+}
+
+int Motor::enable()
+{   
+    
+    // add a condition which check if the motor is enabled and the set MOTOR_ENABLED status
+    set_motor_status(MOTOR_ENABLED);
     return 0;
 }
 
 int Motor::disable()
 {
+    // add a condition which check if the motor is disabled and the reset MOTOR_ENABLED status
+    reset_motor_status(MOTOR_ENABLED);
     return 0;
 }
 
 int Motor::set_zero()
 {
+    // add a condition which check if the motor is set to zero 
     return 0;
 }
 
-int Motor::set_position(double position)
-{
+void Motor::set_kp(double kp){
+    cmd.kp = kp;
+}
+
+void Motor::set_kd(double kd){
+    cmd.kd = kd;
+}
+
+void Motor::set_iff(double iff){
+    cmd.i_ff = iff;
+}
+
+int Motor::set_position(double position){
     return 0;
 }
 
@@ -95,57 +172,18 @@ int Motor::set_velocity(double velocity)
     return 0;
 }
 
-int Motor::set_kp(double kp)
-{
-    return 0;
-}
 
-int Motor::set_kd(double kd)
-{
-    return 0;
-}
 
-int Motor::set_iff(double iff)
-{
-    return 0;
-}
 
-int Motor::set_position_range(double min, double max)
-{
-    return 0;
-}
 
-int Motor::set_velocity_range(double min, double max)
-{
-    return 0;
-}
 
-int Motor::set_kp_range(double min, double max)
-{
-    return 0;
-}
 
-int Motor::set_kd_range(double min, double max)
-{
-    return 0;
-}
-
-int Motor::set_iff_range(double min, double max)
-{
-    return 0;
-}
-
-int Motor::set_current_limit(double max_current)
-{
-    return 0;
-}
-
-void Motor::pack_cmd(control_params_t* ctrl_params)
+void Motor::pack_cmd()
 {
     
 }
 
-int Motor::send_can(can_t* can)
+int Motor::send_can()
 {
     return 0;
 }
@@ -159,3 +197,24 @@ void Motor::unpack_read()
 {
 
 }
+
+bool Motor::check_is_motor_available(){
+    return 0;
+}
+
+void Motor::set_motor_status(unsigned char state_){
+    status |= state_;
+}
+
+void Motor::reset_motor_status(unsigned char state_){
+    status &=~ state_;
+}
+
+unsigned char Motor::get_status(){
+    return status;
+}
+
+unsigned char Motor::check_status(unsigned char state_){
+    return status & state_;
+}
+

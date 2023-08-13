@@ -25,9 +25,9 @@
       max_kp: 500.0
       max_kd: 5.0
       max_iff: 20.0
-      limit_p: [-1, 1]
+      limit_p: [-1.0, 1.0]
       limit_v: 0.5
-      limit_i: 18
+      limit_i: 18.0
     
     m2_params: # FR_THIGH
       id: 2
@@ -36,9 +36,9 @@
       max_kp: 500.0
       max_kd: 5.0
       max_iff: 20.0
-      limit_p: [-1, 1]
+      limit_p: [-1.0, 1.0]
       limit_v: 0.5
-      limit_i: 18
+      limit_i: 18.0
 
     m3_params: # FR_CALF
       id: 3
@@ -47,9 +47,9 @@
       max_kp: 500.0
       max_kd: 5.0
       max_iff: 20.0
-      limit_p: [-1, 1]
+      limit_p: [-1.0, 1.0]
       limit_v: 0.5
-      limit_i: 18
+      limit_i: 18.0
 
     m4_params: # FL_HIP
       id: 4
@@ -58,9 +58,9 @@
       max_kp: 500.0
       max_kd: 5.0
       max_iff: 20.0
-      limit_p: [-1, 1]
+      limit_p: [-1.0, 1.0]
       limit_v: 0.5
-      limit_i: 18
+      limit_i: 18.0
 
     m5_params: # FL_THIGH
       id: 5
@@ -69,9 +69,9 @@
       max_kp: 500.0
       max_kd: 5.0
       max_iff: 20.0
-      limit_p: [-1, 1]
+      limit_p: [-1.0, 1.0]
       limit_v: 0.5
-      limit_i: 18
+      limit_i: 18.0
 
     m6_params:
       id: 6
@@ -80,9 +80,9 @@
       max_kp: 500.0
       max_kd: 5.0
       max_iff: 20.0
-      limit_p: [-1, 1]
+      limit_p: [-1.0, 1.0]
       limit_v: 0.5
-      limit_i: 18
+      limit_i: 18.0
     
     m7_params:
       id: 7
@@ -91,9 +91,9 @@
       max_kp: 500.0
       max_kd: 5.0
       max_iff: 20.0
-      limit_p: [-1, 1]
+      limit_p: [-1.0, 1.0]
       limit_v: 0.5
-      limit_i: 18
+      limit_i: 18.0
 
     m8_params:
       id: 8
@@ -102,9 +102,9 @@
       max_kp: 500.0
       max_kd: 5.0
       max_iff: 20.0
-      limit_p: [-1, 1]
+      limit_p: [-1.0, 1.0]
       limit_v: 0.5
-      limit_i: 18
+      limit_i: 18.0
 
     m9_params:
       id: 9
@@ -113,9 +113,9 @@
       max_kp: 500.0
       max_kd: 5.0
       max_iff: 20.0
-      limit_p: [-1, 1]
+      limit_p: [-1.0, 1.0]
       limit_v: 0.5
-      limit_i: 18
+      limit_i: 18.0
 
     m10_params:
       id: 10
@@ -124,9 +124,9 @@
       max_kp: 500.0
       max_kd: 5.0
       max_iff: 20.0
-      limit_p: [-1, 1]
+      limit_p: [-1.0, 1.0]
       limit_v: 0.5
-      limit_i: 18
+      limit_i: 18.0
 
     m11_params:
       id: 11
@@ -135,9 +135,9 @@
       max_kp: 500.0
       max_kd: 5.0
       max_iff: 20.0
-      limit_p: [-1, 1]
+      limit_p: [-1.0, 1.0]
       limit_v: 0.5
-      limit_i: 18
+      limit_i: 18.0
 
     m12_params:
       id: 12
@@ -146,9 +146,9 @@
       max_kp: 500.0
       max_kd: 5.0
       max_iff: 20.0
-      limit_p: [-1, 1]
+      limit_p: [-1.0, 1.0]
       limit_v: 0.5
-      limit_i: 18
+      limit_i: 18.0
 
     
 

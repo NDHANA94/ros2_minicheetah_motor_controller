@@ -1,6 +1,11 @@
 #!/usr/bin/sudo bash
 # Nipun Dhananjaya Weerakkodi <nipun.dhananjaya@gmail.com>
 
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+CYAN='\033[0;36m'
+NC='\033[0m'
+
 HELP="
 Enable SLCAN (USB-to-CAN) adapters as CAN network interface
 
@@ -58,7 +63,7 @@ Please install can-utils using 'sudo apt-get install can-utils'".
 # --------------------------------------------------
 
 function stop_slcand() {
-    echo "Stopping slcand..." >&2
+    printf "[slcan.bash]${CYAN}Stopping slcand...${NC}\n" >&2
     # Trying to close with SIGINT first
     killall -INT slcand &> /dev/null
     sleep 0.3
@@ -74,11 +79,12 @@ function stop_slcand() {
 }
 
 function initialize_slcan() {
-    echo "\033[0;36mAttaching '$DEV_PATH' to '$CAN_IFACE': | bitrate_code '$BITRATE_CODE' | baudrate '$BAUDRATE' |\033[0m" >&2
-    echo "\033[0;36msudo slcand -o -c -s$BITRATE_CODE -S$BAUDRATE $DEV_PATH $CAN_IFACE\033[0m"
+    printf "[slcan.bash]${CYAN}Attaching '$DEV_PATH' to '$CAN_IFACE'...${NC}\n" >&2
+    printf "[slcan.bash]${CYAN}SLCAN parameters: | bitrate_code: '$BITRATE_CODE' | txqueuelen: $TXQUEUELEN | baudrate: '$BAUDRATE' |${NC}\n" >&2
+    printf "[slcan.bash]${CYAN}Running command to create slcan interface: slcand -o -c -s$BITRATE_CODE -S$BAUDRATE $DEV_PATH $CAN_IFACE${NC}\n" >&2
     slcand -o -c -s$BITRATE_CODE -S$BAUDRATE $DEV_PATH $CAN_IFACE || return 5
     sleep 2
-    echo "\033[0;36mip link set $CAN_IFACE up txqueuelen $TXQUEUELEN\033[0m"
+    printf "[slcan.bash]${CYAN}Running command to up $CAN_IFACE: ip link set $CAN_IFACE up txqueuelen $TXQUEUELEN${NC}\n" >&2
     ip link set $CAN_IFACE up txqueuelen $TXQUEUELEN || return 6
 }
 
@@ -133,7 +139,7 @@ done
 if [ $init_can -eq 1 ]
 then 
     initialize_slcan
-    echo "\033[0;36m$CAN_IFACE is initialized\033[0m"
+    printf "[slcan.bash]${GREEN}$CAN_IFACE is initialized${NC}\n" >&2
 fi
 
 ip link show can0

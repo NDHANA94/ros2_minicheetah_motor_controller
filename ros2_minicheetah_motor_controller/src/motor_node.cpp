@@ -30,10 +30,14 @@ SOFTWARE.
 MiniCheetahMotorController::MiniCheetahMotorController()
 : Node("motor_controller_node")
 {
+  RCLCPP_INFO(this->get_logger(), "%sInitializing motor_node.%s", GREEN, NC);
+
   declare_parameters(); 
   init_motors();
   read_parameters(); 
+  
   init_can(); // initialize can interface, if there will be an error terminate the program.
+  
 
 
   subscription_ = this->create_subscription<std_msgs::msg::Float64MultiArray>
@@ -48,47 +52,48 @@ MiniCheetahMotorController::MiniCheetahMotorController()
 
 MiniCheetahMotorController::~MiniCheetahMotorController()
 {
-  char* slcand_close_cmd;
-  slcand_close_cmd = new char[255];
+  // deallocate motor memory
+  delete[]motor;
+  motor = NULL;
+  // close slcan
+  RCLCPP_INFO(this->get_logger(), "%sclosing motor_node!%s", PURPLE, NC);
+  char slcand_close_cmd[255];
   sprintf(slcand_close_cmd, "%s -r", slcan_bringup_file_dir.c_str());
-  system(slcand_close_cmd);
-  delete [] slcand_close_cmd;
-  slcand_close_cmd = nullptr;
-  // delete [] motor;
-  // motor = nullptr;
-  RCLCPP_INFO(this->get_logger(), "Closing motor_node");
+  RCLCPP_INFO(this->get_logger(), "%s system cmd: %s %s", PURPLE, slcand_close_cmd, NC);
+  int fb = system(slcand_close_cmd);
+  RCLCPP_INFO(this->get_logger(), "%s system cmd fb: %i %s", PURPLE, fb, NC);
+  RCLCPP_INFO(this->get_logger(), "%sCAN is closed!%s", PURPLE, NC);
+  
+  RCLCPP_INFO(this->get_logger(), "%smotor_node is closed!%s", PURPLE, NC);
 }
 
- // load num_of_motors befor this and the read parameters
+ // Make sure to declare parameters before using init_motors() method
 void MiniCheetahMotorController::init_motors()
 {
-  motor = new Motor[num_of_motors_]{};
+  motor = new Motor[num_of_motors_];
+  RCLCPP_INFO(this->get_logger(), "%sallocated memory for %i motors.%s", GREEN, num_of_motors_, NC);
 }
 
 void MiniCheetahMotorController::declare_parameters()
 {
   this->declare_parameter("subscriber_name");
-
   this->declare_parameter("can_interface.interface_type");
   this->declare_parameter("can_interface.port");
   this->declare_parameter("can_interface.interface_name");
   this->declare_parameter("can_interface.bitrate_code");
   this->declare_parameter("can_interface.baudrate");
   this->declare_parameter("can_interface.txqueuelen");
-
   this->declare_parameter("read_cmd_response_delay");
   this->declare_parameter("read_set_zero_response_delay");
   this->declare_parameter("state_update_frequency");
-
   this->declare_parameter("num_of_motors");
+  // declare motor params for each motors
   num_of_motors_ = this->get_parameter("num_of_motors").as_int();
-
-  
   uint8_t num_of_childs = sizeof(param_child)/sizeof(param_child[0]);
   char param[25];
   if(num_of_motors_ > 12){
     num_of_motors_ = 12;
-    RCLCPP_WARN(this->get_logger(), "\033[0;33mNumber of maximum motors are 12. Only first 12 motors will be initialized\033[0m");
+    RCLCPP_WARN(this->get_logger(), "%sNumber of maximum motors are 12. Only first 12 motors will be initialized%s", YELLOW, NC);
   }
   for(int i=1; i<=num_of_motors_; i++){
     for(int j=0; j<num_of_childs; j++){
@@ -96,82 +101,81 @@ void MiniCheetahMotorController::declare_parameters()
       this->declare_parameter(param);
     }
   }
+  RCLCPP_INFO(this->get_logger(), "%smotor_node ros-params are declared.%s", GREEN, NC);
 }
 
 void MiniCheetahMotorController::read_parameters(){
   subscriber_name_ = this->get_parameter("subscriber_name").as_string();
-
   _can.interface_type  = this->get_parameter("can_interface.interface_type").as_string();
   _can.port            = this->get_parameter("can_interface.port").as_string();
   _can.interface_name  = this->get_parameter("can_interface.interface_name").as_string();
   _can.bitrate         = this->get_parameter("can_interface.bitrate_code").as_int();
   _can.baudrate        = this->get_parameter("can_interface.baudrate").as_int();
   _can.txqueuelen      = this->get_parameter("can_interface.txqueuelen").as_int();
-
   read_cmd_response_delay_ = this->get_parameter("read_cmd_response_delay").as_double();
   read_set_zero_response_delay_ = this->get_parameter("read_set_zero_response_delay").as_double();
   motor_state_update_freq_ = this->get_parameter("state_update_frequency").as_int();
-
   num_of_motors_ = this->get_parameter("num_of_motors").as_int();
 
   uint8_t num_of_childs = sizeof(param_child)/sizeof(param_child[0]);
-  char param[25];
-  for(int i=0; i<num_of_motors_; i++){
+  char param[50];
+  for(int i=1; i<=num_of_motors_; i++){
     for(int j=0; j<num_of_childs; j++){
       switch (j)
       {
       case 0: // id
-        sprintf(param, "m%i_param.%s", i, param_child[j].c_str());
-        motor[i].id = this->get_parameter(param).as_int();
+        sprintf(param, "m%i_params.%s", i, param_child[j].c_str());
+        motor[i].set_id(this->get_parameter(param).as_int());
+        // RCLCPP_INFO(this->get_logger(), "%sset %s%s", BLUE, param, NC);
         break;
       case 1: // max_p
-        sprintf(param, "m%i_param.%s", i, param_child[j].c_str());
-        motor[i].ctrl_param.p_des.max = this->get_parameter(param).as_double();
-        motor[i].ctrl_param.p_des.min = -this->get_parameter(param).as_double();
+        sprintf(param, "m%i_params.%s", i, param_child[j].c_str());
+        motor[i].set_position_range(this->get_parameter(param).as_double());
+        // RCLCPP_INFO(this->get_logger(), "%sset %s%s", BLUE, param, NC);
         break; 
       case 2: // max_v
-        sprintf(param, "m%i_param.%s", i, param_child[j].c_str());
-        motor[i].ctrl_param.v_des.max = this->get_parameter(param).as_double();
-        motor[i].ctrl_param.v_des.min = -this->get_parameter(param).as_double();
+        sprintf(param, "m%i_params.%s", i, param_child[j].c_str());
+        motor[i].set_velocity_range(this->get_parameter(param).as_double());
+        // RCLCPP_INFO(this->get_logger(), "%sset %s%s", BLUE, param, NC);
         break;
       case 3: // max_kp
-        sprintf(param, "m%i_param.%s", i, param_child[j].c_str());
-        motor[i].ctrl_param.kp.max = this->get_parameter(param).as_double();
-        motor[i].ctrl_param.kp.min = 0;
+        sprintf(param, "m%i_params.%s", i, param_child[j].c_str());
+        motor[i].set_kp_range(this->get_parameter(param).as_double());
+        // RCLCPP_INFO(this->get_logger(), "%sset %s%s", BLUE, param, NC);
         break;
       case 4: // max_kd
-        sprintf(param, "m%i_param.%s", i, param_child[j].c_str());
-        motor[i].ctrl_param.kd.max = this->get_parameter(param).as_double();
-        motor[i].ctrl_param.kd.min = 0;
+        sprintf(param, "m%i_params.%s", i, param_child[j].c_str());
+        motor[i].set_kd_range(this->get_parameter(param).as_double());
+        // RCLCPP_INFO(this->get_logger(), "%sset %s%s", BLUE, param, NC);
         break;
       case 5: // max_iff
-        sprintf(param, "m%i_param.%s", i, param_child[j].c_str());
-        motor[i].ctrl_param.i_ff.max = this->get_parameter(param).as_double();
-        motor[i].ctrl_param.i_ff.min = -this->get_parameter(param).as_double();
+        sprintf(param, "m%i_params.%s", i, param_child[j].c_str());
+        motor[i].set_iff_range(this->get_parameter(param).as_double());
+        // RCLCPP_INFO(this->get_logger(), "%sset %s%s", BLUE, param, NC);
         break;
       case 6: // limit_p -> to limit operatable max/min position
-        sprintf(param, "m%i_param.%s", i, param_child[j].c_str());
-        motor[i].limit.p_min = this->get_parameter(param).as_double_array()[0];
-        motor[i].limit.p_max = this->get_parameter(param).as_double_array()[1];
+        sprintf(param, "m%i_params.%s", i, param_child[j].c_str());
+        motor[i].set_limit_position(this->get_parameter(param).as_double_array());
+        // RCLCPP_INFO(this->get_logger(), "%sset %s%s", BLUE, param, NC);
         break;
       case 7: // limit_v -> to limit operatable max/min velocity
-        sprintf(param, "m%i_param.%s", i, param_child[j].c_str());
-        motor[i].limit.v_max = this->get_parameter(param).as_double();
-        motor[i].limit.v_min = -motor[i].limit.v_max;
+        sprintf(param, "m%i_params.%s", i, param_child[j].c_str());
+        motor[i].set_limit_velocity(this->get_parameter(param).as_double());
+        // RCLCPP_INFO(this->get_logger(), "%sset %s%s", BLUE, param, NC);
         break;
       case 8: // limit_v -> to limit operatable max/min velocity
-        sprintf(param, "m%i_param.%s", i, param_child[j].c_str());
-        motor[i].limit.i_max = this->get_parameter(param).as_double();
-        motor[i].limit.i_min = -motor[i].limit.i_max;
+        sprintf(param, "m%i_params.%s", i, param_child[j].c_str());
+        motor[i].set_limit_current(this->get_parameter(param).as_double());
+        // RCLCPP_INFO(this->get_logger(), "%sset %s%s", BLUE, param, NC);
         break;
       default:
         break;
       }
     }
+    RCLCPP_INFO(this->get_logger(), "%sset motor %i params: %f, %f %s", BLUE, i, motor[i].motor_params.p_des.max, motor[i].motor_params.p_des.min, NC);
   }
-  
-  RCLCPP_INFO(this->get_logger(), "Loaded parameters: \n\tcan iface type: %s, \n\tcan_port: %s\n\tcan_iface_name: %s",
-                                  _can.interface_type.c_str(), _can.port.c_str(), _can.interface_name.c_str());
+  RCLCPP_INFO(this->get_logger(), "%smotor_node ros-params are successfully loaded.%s", GREEN, NC);
+  RCLCPP_INFO(this->get_logger(), "%smotor_status -> param set: %i%s", PURPLE, motor[0].check_status(MOTOR_PARAMS_SET), NC);
 }
 
 void MiniCheetahMotorController::init_can()
@@ -181,47 +185,54 @@ void MiniCheetahMotorController::init_can()
   else if (_can.interface_type == "CAN"){}
 
   // Initialize CAN Socket and check errors
-  if (_can.status.is_can_initialized && (can.s = socket(PF_CAN, SOCK_RAW, CAN_RAW)) < 0)
+  can.s = socket(PF_CAN, SOCK_RAW, CAN_RAW); // 1
+  if (_can.status.is_can_initialized && (can.s < 0))
   {
     perror("Socket");
-    RCLCPP_ERROR(this->get_logger(), "\033[0;31mFailed to open socket\033[0m");
-    exit(0);
+    RCLCPP_ERROR(this->get_logger(), "%sFailed to open socket%s", RED, NC);
+    exit(1);
   }
-  else{
-    RCLCPP_INFO(this->get_logger(), "\033[0;32mSocket is opened sucessfully\033[0m");
-    strcpy(can.ifr.ifr_name, _can.interface_name.c_str());
-    ioctl(can.s, SIOCGIFINDEX, &can.ifr);
-    
-    memset(&can.addr, 0, sizeof(can.addr));
-    can.addr.can_family = AF_CAN;
-    can.addr.can_ifindex = can.ifr.ifr_ifindex;
+  else if(!_can.status.is_can_initialized){
+    RCLCPP_ERROR(this->get_logger(), "%sCould not find a CAN interface.%s", RED, NC);
+    exit(1);
+  }
+  
+  RCLCPP_INFO(this->get_logger(), "%sSocket is opened sucessfully%s", GREEN, NC);
+  strcpy(can.ifr.ifr_name, _can.interface_name.c_str()); // 2
+  ioctl(can.s, SIOCGIFINDEX, &can.ifr); // 3
+  
+  memset(&can.addr, 0, sizeof(can.addr));
+  can.addr.can_family = AF_CAN; // 4
+  can.addr.can_ifindex = can.ifr.ifr_ifindex; // 5
 
-    sleep(2);
-    if (bind(can.s, (struct sockaddr *)&can.addr, sizeof(can.addr)) < 0) {
-		perror("Bind");
-    RCLCPP_ERROR(this->get_logger(), "\033[0;31mFailed to bind the socket\033[0m");
-		exit(0);
-	}
-    else{
-      RCLCPP_INFO(this->get_logger(), "\033[0;32mSuccessfully binded the Socket\033[0m");
-      _can.status.is_socket_initialzed=true;
-    }
+  sleep(2);
+  if (bind(can.s, (struct sockaddr *)&can.addr, sizeof(can.addr)) < 0) { // 6
+    perror("Bind");
+    RCLCPP_ERROR(this->get_logger(), "%sFailed to bind the socket%s", RED, NC);
+    exit(1);
   }
+
+  RCLCPP_INFO(this->get_logger(), "%sSocket is successfully bound%s", GREEN, NC);
+  _can.status.is_socket_initialzed=true;
+  
+  // assign can_ptr of each initialized motors to the address of 'can' struct.
+  for(int i = 0; i<num_of_motors_; i++){
+    motor[i].set_can(&can);
+  }
+  RCLCPP_INFO(this->get_logger(), "%sCAN interface is connected with all the %i motor objects.%s", GREEN, num_of_motors_, NC);
+
 }
 
 void MiniCheetahMotorController::init_slcan()
 {
   // run the bash script to enable can interface
-  RCLCPP_INFO(this->get_logger(), "\033[0;33mInitialzing %s interface as %s ....\033[0m", _can.interface_type.c_str(), _can.interface_name.c_str());
+  RCLCPP_INFO(this->get_logger(), "%sInitialzing %s interface as %s%s", GREEN, _can.interface_type.c_str(), _can.interface_name.c_str(), NC);
   pkg_share_dir = ament_index_cpp::get_package_share_directory(PKG_NAME);
   slcan_bringup_file_dir = pkg_share_dir + "/bash_scripts/slcan.bash";
-  char* can_bringup_default_cmd;
-  can_bringup_default_cmd = new char[255];
+  char can_bringup_default_cmd[255];
   sprintf(can_bringup_default_cmd, "%s", slcan_bringup_file_dir.c_str());
-  char* total_cmd;
-  total_cmd = new char[500];
-  char* cmd_options;
-  cmd_options = new char[255];
+  char total_cmd[655];
+  char cmd_options[400];
   sprintf(cmd_options, "-s%i -S%i -t%i --can-name %s --dev-path %s", _can.bitrate, _can.baudrate, _can.txqueuelen, _can.interface_name.c_str(), _can.port.c_str());
   sprintf(total_cmd, "%s %s", can_bringup_default_cmd, cmd_options);
   // RCLCPP_INFO(this->get_logger(), "%s", total_cmd);
@@ -230,28 +241,41 @@ void MiniCheetahMotorController::init_slcan()
   // check errors
   if(is_can_bringup == 0)
   {
-    RCLCPP_INFO(this->get_logger(), "\033[0;32m%s interface is successfully initialized as %s\033[0m", _can.interface_type.c_str(), _can.interface_name.c_str());
+    RCLCPP_INFO(this->get_logger(), "%s%s interface is successfully initialized as %s%s", GREEN, _can.interface_type.c_str(), _can.interface_name.c_str(), NC);
     _can.status.is_can_initialized=true;
-    delete [] can_bringup_default_cmd;
   }
   else if (is_can_bringup == 256)
   {
-    RCLCPP_ERROR(this->get_logger(), "\033[0;31mFailed to initialize %s.  %s can not be found!\033[0m ", _can.interface_type.c_str(), _can.port.c_str());
-    delete [] can_bringup_default_cmd;
+    RCLCPP_ERROR(this->get_logger(), "%sFailed to initialize %s.  %s can not be found!%s", RED, _can.interface_type.c_str(), _can.port.c_str(), NC);
     exit(1);
   }
   else{
-    RCLCPP_ERROR(this->get_logger(), "\033[0;31mFailed to execute slcan.bash script.\033[0m");
-    RCLCPP_INFO(this->get_logger(), "\033[0;33mPlease give permission to slcan.bash file by running;\033[0m \033[0:36msudo chmod a+x %s\033[0m", can_bringup_default_cmd );
-    // delete allocated memory
-    delete [] can_bringup_default_cmd;
-    can_bringup_default_cmd = nullptr;
-    delete [] cmd_options;
-    cmd_options = nullptr;
-    delete [] total_cmd;
-    total_cmd = nullptr;
+    RCLCPP_ERROR(this->get_logger(), "%sFailed to execute slcan.bash script.%s", RED, NC);
+    RCLCPP_INFO(this->get_logger(), "%sPlease give permission to slcan.bash file by running;\033[0m \033[0:36msudo chmod a+x %s%s", YELLOW, can_bringup_default_cmd, NC);
     exit(1);
   }
+}
+
+int MiniCheetahMotorController::can_read()
+{
+  int nbytes = read(can.s, &can.frame, sizeof(struct can_frame));
+  if (nbytes < 0){
+    perror("can raw socket read");
+    RCLCPP_ERROR(this->get_logger(), "%sCAN raw socket read error.%s", RED, NC);
+    return 1;
+  }
+
+  // paranoid check ...
+  if(nbytes < int(sizeof(struct can_frame))){
+    fprintf(stderr, "read: incomplete CAN frame\n");
+    RCLCPP_WARN(this->get_logger(), "%sCAN READ: incomplete CAN frame.%s", RED, NC);
+    return 1;
+  }
+  RCLCPP_INFO(this->get_logger(), "%scan received: id=%u , data: |%u|%u|%u|%u|%u|%u|%u|%u| %s", YELLOW, can.frame.can_id,
+                                                            can.frame.data[0], can.frame.data[1], can.frame.data[2],
+                                                            can.frame.data[3], can.frame.data[4], can.frame.data[5],
+                                                            can.frame.data[6], can.frame.data[7], NC);
+  return 0;
 }
 
   
@@ -268,6 +292,7 @@ void MiniCheetahMotorController::subscription_callback(const std_msgs::msg::Floa
 
 void MiniCheetahMotorController::timer_callback()
 {
+  can_read();
   // uint8_t tx_data[9];
   // tx_data[0] = 100;
   // size_t written_bytes = serial_.self.write(tx_data, sizeof(tx_data));

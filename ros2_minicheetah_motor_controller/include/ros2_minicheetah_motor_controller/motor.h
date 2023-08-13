@@ -30,6 +30,8 @@ SOFTWARE.
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <vector>
+#include <bitset>
 
 #include <net/if.h>
 #include <sys/ioctl.h>
@@ -44,28 +46,103 @@ SOFTWARE.
 
 #define MAX_NUM_MOTORS 12
 
+#define PDES_PARAMS_SET     0b10000
+#define VDES_PARAMS_SET     0b01000
+#define KP_PARAMS_SET       0b00100
+#define KD_PARAMS_SET       0b00010
+#define IFF_PARAMS_SET      0b00001
+
+#define MOTOR_ID_SET        0b00000001
+#define MOTOR_AVAILABLE     0b00000010
+#define MOTOR_ENABLED       0b00000100
+#define MOTOR_PARAMS_SET    0b00001000
+#define MOTOR_IN_RANGE      0b00010000
+#define MOTOR_CAN_SET       0b00100000
+#define MOTOR_READY_TO_MOVE 0x3F        // or 0b00111111
+
+#define SET     |=
+#define UNSET   &=~
+
+#define MOTOR_ENABLE_CMD        {0, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFC}
+#define MOTOR_DISABLE_CMD       {0, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFD}
+#define MOTOR_SETZERO_CMD       {0, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFE}
+
 // ---------------------
+// range: min, max
 struct{
-    double set;
     double min;
     double max;
-}typedef param_t;
+}typedef range_t;
 
+/**
+ * Motor params: 
+ * \param p.min: Minimum value of motor position 
+ * \param p.max: Maximum value of motor position
+ * \param v.min: Minimum value motor velocity
+ * \param v.max: Maximum value motor velocity 
+ * \param kp.min: Minimum value motor Kp
+ * \param kp.max: Maximum value motor Kp 
+ * \param kd.min: Minimum value motor Kd
+ * \param kd.max: Maximum value motor Kd 
+ * \param i_ff.min: Minimum value motor feed forward current
+ * \param i_ff.max: Maximum value motor feed foward current
+ * \param set_status: status of params configuration
+ */
 struct{
-    param_t p_des;
-    param_t v_des;
-    param_t kp;
-    param_t kd;
-    param_t i_ff;
-    double max_motor_current;
-}typedef control_params_t;
+    range_t p_des;
+    range_t v_des;
+    range_t kp;
+    range_t kd;
+    range_t i_ff;
+    int set_status = 0b00000; // | set p_des | set v_des| set kp | set kd | set i_ff |
+}typedef motor_params_t;
 // ----------------------
+
+/**
+ * Limit motor position, velocity and current
+ * \param position.min: to keep motor position not lower than this value
+ * \param position.max: to keep motor position not higher than this value
+ * \param velocity.min: to keep motor velocity not lower than this value
+ * \param velocity.max: to keep motor velocity not hiher than this value
+ * \param current.min: to keep motor current not lower than this value
+ * \param current.max: to keep motor current not highr than this value
+*/
+struct{
+    range_t position;
+    range_t velocity;
+    range_t current;
+}typedef limit_t;
+// ----------------------
+
+
+/**
+ * Motor commands:
+ * \param p_des: Desired position
+ * \param v_des: Desired position
+ * \param kp: Stiffness
+ * \param kd: Damping
+ * \param i_ff: Feed forward current
+ */
+struct{
+    double p_des;
+    double v_des;
+    double kp;
+    double kd;
+    double i_ff;
+}typedef motor_cmd_t;
+// ---------------------
 
 struct{
     uint8_t raw;
     double  unpacked;
 }typedef state_t_;
 
+/**
+ * State of the motor
+ * \param position: current position of the motor
+ * \param velocity: current velocity of the motor
+ * \param current: current motor intake electric current
+  */
 struct{
     state_t_ position;
     state_t_ velocity;
@@ -73,6 +150,14 @@ struct{
 }typedef state_t;
 // ----------------------
 
+/**
+ * CAN Socket parameters
+ * \param s: Socket
+ * \param frame: CAN frame
+ * \param ifr: 
+ * \param *ifname: 
+ * \param ret:  
+  */
 struct{
     int s = -1;
     struct sockaddr_can addr;
@@ -82,55 +167,63 @@ struct{
     int ret = EXIT_FAILURE;
 }typedef can_t;
 
-struct{
-    double p_max;
-    double p_min;
-    double v_max;
-    double v_min;
-    double i_max;
-    double i_min;
-}typedef limit_t;
 
 // =====================================================
 #pragma once
 class Motor
 {
 private:
-    int status; // ....| is_enable | is_available | error |
-
-    void pack_cmd(control_params_t* ctrl_params);
-    int send_can(can_t* can);
+    uint8_t id;
+    
+    limit_t limit;
+    state_t state;
+    motor_cmd_t cmd;
+    unsigned char status = 0; // 0b00xxxxxx : | 7: - | 6: - | 5: CAN set | 4: in range | 3: params set | 2: enabled | 1: available | 0: id set |
+    can_t* can_ptr;
+    
+    void pack_cmd();
+    int send_can();
     int read_can();
     void unpack_read();
+
+    bool check_is_motor_available();
+    void set_motor_status(unsigned char state_); // OK
+    void reset_motor_status(unsigned char state_); // OK
+    
     
 public:
     Motor();
     ~Motor();
+    motor_params_t motor_params;
+    void set_id(int id_);  // OK
+    void set_can(can_t* can); // OK
 
-    limit_t limit;
-    uint8_t id;
-    state_t state;
-    control_params_t ctrl_param;
+    void set_position_range(double max); // OK
+    void set_velocity_range(double max); // OK
+    void set_kp_range(double max); // OK
+    void set_kd_range(double max); // OK
+    void set_iff_range(double max); // OK
 
-    can_t* can_ptr;
+    void set_limit_position(std::vector<double> limit_p); // OK
+    void set_limit_velocity(double limit_v); // OK
+    void set_limit_current(double limit_i); // OK
+ 
+    int enable(); // TODO
+    int disable(); // TODO
+    int set_zero(); // TODO
+
+    void set_kp(double kp); // OK
+    void set_kd(double kd); // OK
+    void set_iff(double iff); // OK
+
+    int set_position(double position); // TODO
+    int set_position(double position, double velocity); // TODO
+    int set_position(double position, double velocity, double kp, double kd, double i_ff); // TODO
+    int set_velocity(double velocity); // TODO
+
     
-    int enable();
-    int disable();
-    int set_zero();
-    int set_position(double position);
-    int set_position(double position, double velocity);
-    int set_position(double position, double velocity, double kp, double kd, double i_ff);
-    int set_velocity(double velocity);
-    int set_kp(double kp);
-    int set_kd(double kd);
-    int set_iff(double iff);
-    int set_position_range(double min, double max);
-    int set_velocity_range(double min, double max);
-    int set_kp_range(double min, double max);
-    int set_kd_range(double min, double max);
-    int set_iff_range(double min, double max);
-    int set_current_limit(double max_current); // motor will be disabled once the motor currunt exceed this limit.
-    
+    unsigned char check_status(unsigned char state_); // OK
+    unsigned char get_status(); // OK
 };
 
 
