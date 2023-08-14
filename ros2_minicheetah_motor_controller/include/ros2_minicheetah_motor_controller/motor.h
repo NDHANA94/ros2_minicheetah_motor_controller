@@ -42,7 +42,7 @@ SOFTWARE.
 
 #include "rclcpp/rclcpp.hpp"
 
-
+#include "ros2_minicheetah_motor_controller/color_print.h"
 
 #define MAX_NUM_MOTORS 12
 
@@ -63,9 +63,10 @@ SOFTWARE.
 #define SET     |=
 #define UNSET   &=~
 
-#define MOTOR_ENABLE_CMD        {0, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFC}
-#define MOTOR_DISABLE_CMD       {0, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFD}
-#define MOTOR_SETZERO_CMD       {0, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFE}
+
+#define MOTOR_ENABLE_CMD        {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFC}
+#define MOTOR_DISABLE_CMD       {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFD}
+#define MOTOR_SETZERO_CMD       {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFE}
 
 // ---------------------
 // range: min, max
@@ -111,7 +112,7 @@ struct{
     range_t position;
     range_t velocity;
     range_t current;
-}typedef limit_t;
+}typedef motor_limit_t;
 // ----------------------
 
 
@@ -147,7 +148,7 @@ struct{
     state_t_ position;
     state_t_ velocity;
     state_t_ current;
-}typedef state_t;
+}typedef motor_states_t;
 // ----------------------
 
 /**
@@ -161,10 +162,13 @@ struct{
 struct{
     int s = -1;
     struct sockaddr_can addr;
-    struct can_frame frame;
+    struct can_frame rx_frame;
+    struct can_frame tx_frame;
     struct ifreq ifr;
     char *ifname;
     int ret = EXIT_FAILURE;
+    struct timeval tv;
+    uint8_t write_retries;
 }typedef can_t;
 
 
@@ -175,11 +179,13 @@ class Motor
 private:
     uint8_t id;
     
-    limit_t limit;
-    state_t state;
+    motor_limit_t limit;
+    motor_states_t states;
     motor_cmd_t cmd;
     unsigned char status = 0; // 0b00xxxxxx : | 7: - | 6: - | 5: CAN set | 4: in range | 3: params set | 2: enabled | 1: available | 0: id set |
     can_t* can_ptr;
+    // rclcpp::Logger(*loggerPtr_)();
+    char print_msg[50];
     
     void pack_cmd();
     int send_can();
@@ -189,10 +195,14 @@ private:
     bool check_is_motor_available();
     void set_motor_status(unsigned char state_); // OK
     void reset_motor_status(unsigned char state_); // OK
+
+    void print_info(char* info);
+    void print_error(char* err);
     
     
 public:
     Motor();
+    Motor(can_t* can);
     ~Motor();
     motor_params_t motor_params;
     void set_id(int id_);  // OK
@@ -221,9 +231,11 @@ public:
     int set_position(double position, double velocity, double kp, double kd, double i_ff); // TODO
     int set_velocity(double velocity); // TODO
 
+    motor_states_t get_states();
     
-    unsigned char check_status(unsigned char state_); // OK
+    bool is_status_set(unsigned char state_); // OK
     unsigned char get_status(); // OK
+
 };
 
 

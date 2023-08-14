@@ -9,22 +9,13 @@
 #include <ament_index_cpp/get_package_share_directory.hpp>
 #include "serial/serial.h"
 
-#include "ros2_minicheetah_motor_controller/motor.h"
-
 #include "rclcpp/rclcpp.hpp"
 #include "std_msgs/msg/float64_multi_array.hpp"
 
-#define PKG_NAME "ros2_minicheetah_motor_controller"
+#include "ros2_minicheetah_motor_controller/motor.h"
+#include "ros2_minicheetah_motor_controller/color_print.h"
 
-#define BLACK  "\033[0;30m"
-#define RED    "\033[0;31m"
-#define GREEN  "\033[0;32m"
-#define YELLOW "\033[0;33m"
-#define BLUE   "\033[0;34m"
-#define PURPLE "\033[0;35m"
-#define CYAN   "\033[0;36m"
-#define WHITE  "\033[0;37m"
-#define NC  "\033[0m"
+#define PKG_NAME "ros2_minicheetah_motor_controller"
 
 
 using namespace std::chrono_literals;
@@ -45,7 +36,7 @@ struct{
   int bitrate;
   int baudrate;
   int txqueuelen;
-  int timeout;
+  int timeout_ms;
   uint8_t tx_buf[9];
   uint8_t rx_buf[255];
   can_status_t status;
@@ -75,6 +66,7 @@ private:
     std::string slcan_bringup_file_dir;
     can_t can;
 
+
     rclcpp::Subscription<std_msgs::msg::Float64MultiArray>::SharedPtr subscription_;
     rclcpp::TimerBase::SharedPtr timer_;
 
@@ -82,7 +74,7 @@ public:
     MiniCheetahMotorController();
     ~MiniCheetahMotorController();
 
-    Motor* motor; // pointer to create an array of Motor objects
+    Motor** motor; // pointer to create an array of Motor objects
 
 
 };

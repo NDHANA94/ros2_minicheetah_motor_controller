@@ -40,7 +40,9 @@ def generate_launch_description():
         package=this_pkg,
         name='minicheetah_motor_node',
         executable='motor_node',
-        parameters=[ik_config]
+        parameters=[ik_config],
+        output="screen",
+        emulate_tty=True
     )
 
     ld.add_action(motor_node)

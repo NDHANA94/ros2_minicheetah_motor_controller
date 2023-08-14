@@ -10,6 +10,7 @@
                             # 5-250[Kbps], 6-500[Kbps], 7-800[Kbps], 8-1000[Kbps]
       baudrate: 1000000
       txqueuelen: 1000
+      rcvtimeo: 1000    # receive timeout in ms
 
 
     read_cmd_response_delay: 0.0001 # sec
