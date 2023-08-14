@@ -50,7 +50,6 @@ MiniCheetahMotorController::MiniCheetahMotorController()
 
   for(int i=0; i<num_of_motors_; i++){
     motor[i]->enable();
-    RCLCPP_INFO(this->get_logger(), "can.frame.id: %u   || can.frame.data: |%u|%u|%u|%u|%u|%u|%u|%u|",can.tx_frame.can_id, can.tx_frame.data[0], can.tx_frame.data[1], can.tx_frame.data[2], can.tx_frame.data[3], can.tx_frame.data[4], can.tx_frame.data[5], can.tx_frame.data[6], can.tx_frame.data[7]);
   }
 
 }
@@ -249,9 +248,9 @@ void MiniCheetahMotorController::init_can()
   // }
   RCLCPP_INFO(this->get_logger(), "%sCAN interface is connected with all the %i motor objects.%s", GREEN, num_of_motors_, NC);
 
-  // set CAN DLC (payload length)
-  can.tx_frame.can_dlc = 8;
-  RCLCPP_INFO(this->get_logger(), "%sCAN payload size is set to %i Bytes%s", GREEN, can.tx_frame.can_dlc, NC);
+  // set cmd_frame CAN DLC (payload length)
+  can.cmd_frame.can_dlc = 8;
+  RCLCPP_INFO(this->get_logger(), "%sCAN payload size is set to %i Bytes%s", GREEN, can.cmd_frame.can_dlc, NC);
 
   // set receive timeout
   can.tv.tv_sec = _can.timeout_ms/1000;
@@ -296,7 +295,7 @@ void MiniCheetahMotorController::init_slcan()
 
 int MiniCheetahMotorController::can_read()
 {
-  int nbytes = read(can.s, &can.rx_frame, sizeof(struct can_frame));
+  int nbytes = read(can.s, &can.fb_frame, sizeof(struct can_frame));
   if (nbytes < 0){
     perror("can raw socket read");
     RCLCPP_ERROR(this->get_logger(), "%sCAN raw socket read error.%s", RED, NC);
@@ -309,10 +308,11 @@ int MiniCheetahMotorController::can_read()
     RCLCPP_WARN(this->get_logger(), "%sCAN READ: incomplete CAN frame.%s", RED, NC);
     return 1;
   }
-  RCLCPP_INFO(this->get_logger(), "%scan received: id=%u , data: |%u|%u|%u|%u|%u|%u|%u|%u| %s", YELLOW, can.rx_frame.can_id,
-                                                            can.rx_frame.data[0], can.rx_frame.data[1], can.rx_frame.data[2],
-                                                            can.rx_frame.data[3], can.rx_frame.data[4], can.rx_frame.data[5],
-                                                            can.rx_frame.data[6], can.rx_frame.data[7], NC);
+  RCLCPP_INFO(this->get_logger(), "%scan received: id=%u , data: |%u|%u|%u|%u|%u|%u|%u|%u| %s", YELLOW, can.cmd_frame.can_id,
+                                                            can.cmd_frame.data[0], can.cmd_frame.data[1], can.cmd_frame.data[2],
+                                                            can.cmd_frame.data[3], can.cmd_frame.data[4], can.cmd_frame.data[5],
+                                                            can.cmd_frame.data[6], can.cmd_frame.data[7], NC);
+                                                            
   return 0;
 }
 

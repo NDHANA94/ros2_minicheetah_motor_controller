@@ -162,8 +162,8 @@ struct{
 struct{
     int s = -1;
     struct sockaddr_can addr;
-    struct can_frame rx_frame;
-    struct can_frame tx_frame;
+    struct can_frame cmd_frame; // use for sending motor command
+    struct can_frame fb_frame; // use for receiving motor feedback
     struct ifreq ifr;
     char *ifname;
     int ret = EXIT_FAILURE;
@@ -188,8 +188,9 @@ private:
     char print_msg[50];
     
     void pack_cmd();
-    int send_can();
-    int read_can();
+    int _send_can_frame(struct can_frame frame);
+    int send_can_frame(struct can_frame frame);
+    int get_motor_response();
     void unpack_read();
 
     bool check_is_motor_available();
@@ -200,6 +201,7 @@ private:
     void print_error(char* err);
     
     
+    
 public:
     Motor();
     Motor(can_t* can);
@@ -207,6 +209,7 @@ public:
     motor_params_t motor_params;
     void set_id(int id_);  // OK
     void set_can(can_t* can); // OK
+    bool debug_mode=true;
 
     void set_position_range(double max); // OK
     void set_velocity_range(double max); // OK
@@ -235,6 +238,8 @@ public:
     
     bool is_status_set(unsigned char state_); // OK
     unsigned char get_status(); // OK
+
+    std::string get_can_frame_as_string(struct can_frame frame_);
 
 };
 

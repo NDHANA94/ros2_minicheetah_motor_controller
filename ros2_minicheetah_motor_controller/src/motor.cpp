@@ -151,38 +151,21 @@ void Motor::set_limit_current(double limit_i)
 int Motor::enable()
 {   
     // set id
-    can_ptr->tx_frame.can_id = this->id;
+    can_ptr->cmd_frame.can_id = this->id;
     // set payload size
-    can_ptr->tx_frame.can_dlc = 8;
+    can_ptr->cmd_frame.can_dlc = 8;
     // add data
     unsigned char cmd[8] = MOTOR_ENABLE_CMD;
     for(int i = 0; i<8; i++){
-        can_ptr->tx_frame.data[i] = cmd[i];
+        can_ptr->cmd_frame.data[i] = cmd[i];
     }
     // send CAN frame and check error
-    ssize_t nbytes = write(can_ptr->s, &can_ptr->tx_frame, sizeof(struct can_frame));
-    if (nbytes < 0){
-        print_error("Failed to send enable command");
-    }
-    else{
-        print_info("Sent enable command");
-    }
-    
-    // wait for the resoponse from the motor and read the response
-    nbytes = read(can_ptr->s, &can_ptr->rx_frame, sizeof(struct can_frame));
-    if(nbytes < 0){
-        print_error("No response from the motor");
-        for(int i=0; i<can_ptr->write_retries; i++){
-
-    }
-    }
-    
-    
-    sprintf(print_msg,"can recv %i bytes\n", nbytes);
-    print_info(print_msg);
+    _send_can_frame(can_ptr->cmd_frame);
 
     // add a condition which check if the motor is enabled and the set MOTOR_ENABLED status
-    set_motor_status(MOTOR_ENABLED);
+    if(!get_motor_response() < 0)
+        set_motor_status(MOTOR_ENABLED);
+        print_info("Motor is enabled.");
     return 0;
 }
 
@@ -242,19 +225,78 @@ void Motor::pack_cmd()
     
 }
 
-int Motor::send_can()
+
+int Motor::send_can_frame(struct can_frame frame)
 {
-    u_int8_t nbytes = write(can_ptr->s, &can_ptr->tx_frame, sizeof(struct can_frame));
+    // send tx_frame
+
+    // get response from the motor
+
+    // if response received: set motor avaiable flag of the status; return 0;
+
+    // else: 
+    //      for i < wrtie_retries:
+    //          _send_frame;
+    //          if(get response < 0){
+    //              continue;
+    //          }
+    //          set motor available flag
+    // 
+
+    // if success: set motor enabled flag of the status; return 0;
+
+    // else: reset motor available flag; return -1;
+}
+
+/**
+ * To send tx_frame ove CAN.
+ * @returns  0 if sent, or -1 if failed to send.
+ *  
+*/
+int Motor::_send_can_frame(struct can_frame frame)
+{
+    // write can message
+    ssize_t nbytes = write(can_ptr->s, &frame, sizeof(struct can_frame));
     if(nbytes < 0){
-        // RCLCPP_ERROR(node->)
+        print_error("Failed to send the message over CAN interface!");
+        return -1;
+    }
+    else if(debug_mode){        
+        sprintf(print_msg, "Sent a message: %s", get_can_frame_as_string(frame).c_str());
+        print_info(print_msg);
     }
     return 0;
 }
 
-int Motor::read_can()
+/**
+ * @brief waiting for the response from the motor until it is received before timeout.
+ * Response is saved into rx_frame.
+ * @returns 0 if a message is received from the motor. or -1 if no response from the motor
+ * 
+ * \todo  Add an id filter to get the response
+ */
+int Motor::get_motor_response()
 {
+    /// @todo  Add an id filter to get the response
+    ssize_t nbytes = read(can_ptr->s, &can_ptr->fb_frame, sizeof(struct can_frame));
+    if(nbytes < 0){
+        print_error("No response from the motor"); 
+        return -1;}
+    else{
+        sprintf(print_msg, "rcv response: %s", get_can_frame_as_string(can_ptr->fb_frame).c_str());
+        print_info(print_msg);
+        if(can_ptr->fb_frame.can_id == this->id){
+            print_info("motor received the command.");
+            return 0;
+        }
+        else{
+            print_error("motor did NOT receive the command.");
+            return -1;
+        }
+    }
     return 0;
 }
+
 
 void Motor::unpack_read()
 {
@@ -286,6 +328,13 @@ void Motor::print_info(char* info){
 }
 
 void Motor::print_error(char* err){
-    sprintf(print_msg, "[ERROR]%s[motor][id: %i]%s%s\n", RED, id, err, NC);
-    perror(print_msg);
+    printf("[ERROR]%s[motor][id: %i]%s%s\n", RED, id, err, NC);
+}
+
+std::string Motor::get_can_frame_as_string(struct can_frame frame_)
+{
+    sprintf(print_msg, "|%i||%u|%u|%u|%u|%u|%u|%u|%u|", frame_.can_id, 
+                            frame_.data[0], frame_.data[1], frame_.data[2], frame_.data[3],
+                            frame_.data[4], frame_.data[5], frame_.data[6], frame_.data[7]);
+    return print_msg;
 }
