@@ -10,6 +10,9 @@ A ros2 node for Mini-Cheetah BLDC actuator.
 
 
 
+### Information:
+This package allows to controll multiple Mini-Cheetah BLDC actuators over a CAN 2.0 bus.
+
 ### create ros2 workspace 
 ```
     mkdir -p ros2_ws/src
