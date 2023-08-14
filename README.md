@@ -26,6 +26,6 @@ This package allows to controll multiple Mini-Cheetah BLDC actuators over a CAN 
     cd ~/ros2_ws
     colcon build
     source install/setup.bash
-    sudo chmod a+x /home/nipun/Desktop/ros2_ws/minicheetah_motor_controller_ws/install/ros2_minicheetah_motor_controller/share/ros2_minicheetah_motor_controller/bash_scripts/slcan.bash # to give the permission to the bash file to be excecuted
+    sudo chmod a+x install/ros2_minicheetah_motor_controller/share/ros2_minicheetah_motor_controller/bash_scripts/slcan.bash # to give the permission to the bash file to be excecuted
 ```
 
