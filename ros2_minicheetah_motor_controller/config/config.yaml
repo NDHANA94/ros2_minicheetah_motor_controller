@@ -4,7 +4,8 @@
 
     can_interface:
       interface_type: "SLCAND" # SLCAND, CAN
-      port: "/dev/serial/by-id/usb-Silicon_Labs_CP2102_USB_to_UART_Bridge_Controller_0001-if00-port0"
+      port: "/dev/serial/by-id/usb-1a86_USB2.0-Ser_-if00-port0"
+      # port: "/dev/serial/by-id/usb-Silicon_Labs_CP2102_USB_to_UART_Bridge_Controller_0001-if00-port0"
       interface_name: "can0"
       bitrate_code: 8 # 0-10[Kbps], 1-20[Kbps], 2-50[Kbps], 3-100[Kbps], 4-125[Kbps]
                             # 5-250[Kbps], 6-500[Kbps], 7-800[Kbps], 8-1000[Kbps]
